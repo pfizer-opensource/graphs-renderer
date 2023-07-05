@@ -1,4 +1,4 @@
-import { addDaysToDate, getNoOfDaysBetweenDates } from "../utils/utils.js";
+import { addDaysToDate, getNoOfDaysBetweenDates } from "../../utils/utils.js";
 import UIControlsRenderer from "../UIControlsRenderer.js";
 import * as d3 from 'd3'
 
@@ -44,7 +44,7 @@ class CFDRenderer extends UIControlsRenderer {
 
   useEventBus(eventBus) {
     this.eventBus = eventBus;
-    this.eventBus.addEventListener("change-time-range-scatterplot", this.updateBrush.bind(this));
+    this.eventBus?.addEventListener("change-time-range-scatterplot", this.updateBrush.bind(this));
   }
 
   getReportingDomain(noOfDays) {
@@ -91,8 +91,8 @@ class CFDRenderer extends UIControlsRenderer {
       .on("brush", ({ selection }) => {
         this.currentSelectionDomain = selection.map(this.x.invert, this.x);
         this.updateChart(this.currentSelectionDomain);
-        if (this.isUserBrushEvent) {
-          this.eventBus.emitEvents("change-time-range-cfd", this.currentSelectionDomain);
+        if (this.isUserBrushEvent && this.eventBus) {
+          this.eventBus?.emitEvents("change-time-range-cfd", this.currentSelectionDomain);
         }
         this.isUserBrushEvent = true;
       })

@@ -1,7 +1,8 @@
-import CFDGraph from './cfd/CFDGraph.js';
-import CFDRenderer from './cfd/CFDRenderer.js';
-import ScatterplotGraph from './scatterplot/ScatterplotGraph.js';
-import ScatterplotRenderer from './scatterplot/ScatterplotRenderer.js';
+import CFDGraph from './graphs/cfd/CFDGraph.js';
+import CFDRenderer from './graphs/cfd/CFDRenderer.js';
+import ScatterplotGraph from './graphs/scatterplot/ScatterplotGraph.js';
+import ScatterplotRenderer from './graphs/scatterplot/ScatterplotRenderer.js';
+import HistogramRenderer from './graphs/histogram/HistogramRenderer.js';
 import {processServiceData} from "./data-processor.js";
 import EventBus from "./utils/EventBus.js";
 
@@ -10,6 +11,7 @@ export {
     CFDRenderer,
     ScatterplotGraph,
     ScatterplotRenderer,
+    HistogramRenderer,
     EventBus,
     processServiceData
 };

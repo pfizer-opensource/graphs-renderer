@@ -1,11 +1,11 @@
 import Renderer from "../Renderer.js";
+import * as d3 from 'd3'
 
 /**
  * Class representing a Histogram graph renderer
  */
 class HistogramRenderer extends Renderer {
   #color = "#0ea5e9";
-  #padding = 3;
   #padding = 3;
   #binnedData;
   #noOfBins = 10;
@@ -35,7 +35,7 @@ class HistogramRenderer extends Renderer {
   constructor(data, eventBus) {
     super(data);
     this.eventBus = eventBus;
-    this.eventBus.addEventListener("change-time-range-scatterplot", (timeRange) => {
+    this.eventBus?.addEventListener("change-time-range-scatterplot", (timeRange) => {
       const currentSelectionData = this.data.filter((d) => d.delivered >= timeRange[0] && d.delivered <= timeRange[1]);
       this.#setXScale(currentSelectionData);
       this.#binnedData = this.#computeBinnedData(this.x, currentSelectionData);

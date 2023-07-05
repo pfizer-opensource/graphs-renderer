@@ -1,6 +1,5 @@
-import { readJsonFile } from "./utils/utils.js";
+import { readJsonFile } from "../utils/utils.js";
 import Renderer from "./Renderer.js";
-import * as d3 from 'd3'
 
 export default class UIControlsRenderer extends Renderer {
   currentSelectionDomain;
