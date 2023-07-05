@@ -1,0 +1,22 @@
+{
+  "name": "graphs-renderer",
+  "version": "1.0.0",
+  "description": "A library for rendering the graphs: CFD, Scatterplot and Histogram with d3.js",
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Claudia Givan",
+  "license": "ISC",
+  "dependencies": {
+    "d3": "^7.6.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.22.5",
+    "@babel/preset-env": "^7.22.5",
+    "babel-loader": "^9.1.2",
+    "imports-loader": "^4.0.1",
+    "webpack": "^5.88.1",
+    "webpack-cli": "^5.1.4"
+  }
+}
