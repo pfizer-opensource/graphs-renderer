@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+            content="connect-src 'self' https://4njxsfgzvh.execute-api.us-east-1.amazonaws.com"
+            http-equiv="Content-Security-Policy" />
+    <title>Graphs Example</title>
+    <script src="https://cdn.tailwindcss.com" integrity="sha384-76mJWTQIdZ/g5T0cSoBptGTnvK4ZolzknwUlxOwBUSP9kr82qsUh1aavwwx31NAa" crossorigin="anonymous"></script>
+</head>
+<body>
+<div>
+    <div id="layout">
+        <h1 class="py-4 text-center font-bold bg-black text-white"> Graphs library</h1>
+        <div class="absolute z-10 w-8 border-2 border-black bg-black transition-width duration-200 overflow-x-hidden"
+             id="left-sidebar">
+            <button class="w-full h-10 p-1" id="left-sidebar-button">
+                <img class="w-5 h-5 mx-auto" alt="right-arrow" id="left-sidebar-arrow-img" src="./images/double-right-arrowhead.svg"/>
+            </button>
+            <div class="hidden text-white p-2" id="left-sidebar-content">
+                <h3 class="pl-1">Legend:</h3>
+                <div>
+                    <p class="my-2">
+                        Predictability turns out to be more important than maximizing utilization. To provide better
+                        predictability to stakeholders
+                        and customers, start by focusing on stabilizing the rate that work items flow through the system.
+                    </p>
+                    <p class="my-2">
+                        <b>Lead Time</b> is the average time a work items spends in a system Operational definition:
+                        From when a team commits to work
+                        until PR merge
+                    </p>
+                    <p class="my-2">
+                        <b>Work in Progress</b> (WIP) is the set of work started but not yet completed or abandoned
+                        Operational definition: Use the
+                        same start and end time criteria as used for Lead Time
+                    </p>
+                    <p class="my-2">
+                        <b>Throughput</b> is the average rate the work items enter and exit the system Operational
+                        definition: Calculated as Lead Time
+                        divided by WIP
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div
+                class="absolute z-10 w-8 border-2 border-black bg-black transition-width duration-200 overflow-x-hidden right-0"
+                id="right-sidebar">
+            <button class="w-full h-10 p-1" id="right-sidebar-button">
+                <img class="w-5 h-5 mx-auto" alt="left-arrow"  id="right-sidebar-arrow-img" src="./images/double-left-arrowhead.svg"/>
+            </button>
+            <!--Observation log Form-->
+            <div class="fixed top-0 right-0  w-96 hidden text-white p-2 " id="right-sidebar-content">
+                <div class="my-4" id="form-div">
+                    <h2 class="text-center text-xl text-white">Observation</h2>
+                    <div class="bg-white px-2 mt-5 py-3 rounded">
+                        <div class="mb-4">
+                            <label class="block text-black font-bold" for="date-input">Date</label>
+                            <p class="text-black mb-2">The date on the chart.</p>
+                            <input
+                                    class="shadow appearance-none border bg-gray-300 cursor-not-allowed rounded w-full py-2 px-4 text-black leading-tight focus:outline-none focus:shadow-outline"
+                                    id="date-input"
+                                    readonly
+                                    type="date" />
+                        </div>
+                        <div class="mb-4 hidden" id="scatterplot-form-fields-div">
+                            <label class="block text-black font-bold" for="work-item-input">Work Item</label>
+                            <p class="text-black mb-2">The work item (e.g. Jira issue or Zendesk ticket).</p>
+                            <input
+                                    class="shadow appearance-none border bg-gray-300 cursor-not-allowed rounded w-full py-2 px-4 text-blue-500 leading-tight focus:outline-none focus:shadow-outline"
+                                    id="work-item-input"
+                                    readonly
+                                    type="text" />
+                            <label class="block text-black font-medium mt-4" for="average-cycle-time-input">Lead time</label>
+                            <input
+                                    class="shadow appearance-none bg-gray-300 px-4 w-50 cursor-not-allowed border py-1 rounded text-blue-500 leading-tight focus:outline-none focus:shadow-outline"
+                                    id="lead-time-input"
+                                    type="text"
+                                    readonly />
+                        </div>
+                        <div class="mb-4 hidden" id="cfd-form-fields-div">
+                            <div class="grid grid-cols-2 gap-4">
+                                <!-- Avg. cycle time -->
+                                <div>
+                                    <label class="block text-black font-medium" for="cycle-times-select">Avg. cycle time-state</label>
+                                    <select
+                                            class="block appearance-none shadow bg-gray-300 px-4 w-11/12 cursor-pointer border py-1 rounded text-blue-500 leading-tight focus:outline-none focus:shadow-outline"
+                                            id="cycle-times-select">
+                                    </select>
+                                </div>
+
+
+                                <!-- Avg. lead time -->
+                                <div>
+                                    <label class="block text-black font-medium" for="average-lead-time-input">Avg. lead time</label>
+                                    <input
+                                            class="shadow appearance-none bg-gray-300 px-4 w-11/12 cursor-not-allowed border py-1 rounded text-blue-500 leading-tight focus:outline-none focus:shadow-outline"
+                                            id="average-lead-time-input"
+                                            type="text"
+                                            readonly />
+                                </div>
+
+                                <!-- Throughput -->
+                                <div>
+                                    <label class="block text-black font-medium" for="throughput-input">Throughput</label>
+                                    <input
+                                            class="shadow appearance-none bg-gray-300 px-4 w-11/12 cursor-not-allowed border py-1 rounded text-blue-500 leading-tight focus:outline-none focus:shadow-outline"
+                                            id="throughput-input"
+                                            type="text"
+                                            readonly />
+                                </div>
+
+                                <!-- WIP -->
+                                <div>
+                                    <label class="block text-black font-medium" for="wip-input">WIP</label>
+                                    <input
+                                            class="shadow appearance-none bg-gray-300 px-4 w-11/12 cursor-not-allowed border py-1 rounded text-blue-500 leading-tight focus:outline-none focus:shadow-outline"
+                                            id="wip-input"
+                                            type="text"
+                                            readonly />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="block text-black font-bold" for="observation-input">Observation</label>
+                            <p class="text-black mb-2">
+                                Focus on the observation - what happened at this particular point in the chart? Don't over-complicate your observations.
+                                You can draw insights and learnings from your observations at a later point
+                            </p>
+                            <textarea
+                                    class="shadow appearance-none border rounded w-full py-2 px-4 text-black leading-tight focus:outline-none focus:shadow-outline"
+                                    id="observation-input"
+                                    placeholder="Enter observation"
+                                    rows="10"></textarea>
+                        </div>
+                        <input type="hidden" id="service-id-input" name="service-id" />
+                        <input type="hidden" id="chart-type-input" name="chart-type" />
+                        <input type="hidden" id="observation-id-input" name="observation-id" />
+                        <p id="warning-p" class="text-red-500 my-2"></p>
+                        <button
+                                class="bg-blue-500 text-white font-bold py-2 px-4 rounded border-blue-500 border-2 border-solid focus:outline-none focus:shadow-outline hover:bg-white hover:text-blue-500"
+                                type="button"
+                                id="form-button">
+                            Submit
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="h-full ml-8 -z-10" id="page-content">
+            <div class="mx-auto mt-12 w-10/12">
+                <h1 class="my-2 text-center font-bold">CFD</h1>
+                <div id="cfd-area-div"></div>
+                <div id="cfd-brush-div"></div>
+                <h1 class="my-2 text-center font-bold">Scatterplot</h1>
+                <div id="scatterplot-area-div"></div>
+                <div id="scatterplot-brush-div"></div>
+                <h1 class="my-2 text-center font-bold">Histogram</h1>
+                <div id="histogram-area-div"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="../dist/graphs-renderer.js" type="module"></script>
+<script src="sidebars.js" type="module"></script>
+<script src="exampleData.js" type="module"></script>
+<script src="example.js" type="module"></script>
+</body>
+</html>

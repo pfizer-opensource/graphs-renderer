@@ -1,0 +1,23 @@
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  sonarqube:
+    name: SonarQube Scan
+    continue-on-error: true
+    runs-on: [self-hosted, bolt-ubuntu]
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v3
+
+      - name: SonarQube Scan
+        uses: pfizer-github-automation/sonar-scan-action@main
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_ROOT_CERT: ${{ secrets.SONAR_ROOT_CERT }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
