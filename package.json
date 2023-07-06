@@ -9,6 +9,10 @@
   },
   "author": "Claudia Givan",
   "license": "ISC",
+  "files": [
+    "dist/**/*",
+    "package.json"
+  ],
   "dependencies": {
     "d3": "^7.6.1",
     "@babel/core": "^7.22.5",
