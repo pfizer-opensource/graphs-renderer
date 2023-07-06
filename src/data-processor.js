@@ -28,7 +28,7 @@
  *            "analysis_done": "timestamp",
  *            "delivered": "timestamp",
  *            "dev_complete": "timestamp",
- *            "github_repo": "pfizer/github_repo",
+ *            "github_repo": "github_repo_name",
  *            "in_progress": "timestamp",
  *            "indexes": [],
  *            "tags": [],
@@ -54,7 +54,7 @@ export function processServiceData(serviceData, removedRepos = [], removedTicket
     for (const [, value] of Object.entries(serviceDataCopy)) {
       dataSet = dataSet.concat(value);
     }
-    dataSet = dataSet.filter((t) => t.indexes && !t.indexes.some((i) => i.name === "ticket_type" && removedTicketTypes.includes(i.value)));
+    dataSet = dataSet.filter((t) => t.indexes && !t.indexes.some((i) => i.name === 'ticket_type' && removedTicketTypes.includes(i.value)));
   }
   // console.log(dataSet);
   return dataSet;

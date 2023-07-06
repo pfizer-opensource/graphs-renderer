@@ -1,9 +1,9 @@
 export async function readJsonFile(file) {
   return new Promise((resolve, reject) => {
     if (!file) {
-      reject(new Error("The uploaded file is empty. Please upload a valid JSON file."));
-    } else if (!file.type.includes("json")) {
-      reject(new Error("Invalid file type. Please upload a valid JSON file."));
+      reject(new Error('The uploaded file is empty. Please upload a valid JSON file.'));
+    } else if (!file.type.includes('json')) {
+      reject(new Error('Invalid file type. Please upload a valid JSON file.'));
     } else {
       const reader = new FileReader();
       reader.onload = (e) => {

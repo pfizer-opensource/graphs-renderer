@@ -1,11 +1,13 @@
-import { getNoOfDaysBetweenDates, addDaysToDate } from "../../utils/utils.js";
-import UIControlsRenderer from "../UIControlsRenderer.js";
+import { getNoOfDaysBetweenDates, addDaysToDate } from '../../utils/utils.js';
+import UIControlsRenderer from '../UIControlsRenderer.js';
+import * as d3 from 'd3';
 
 /**
  * Class representing a Scatterplot graph renderer
  */
 class ScatterplotRenderer extends UIControlsRenderer {
-  #color = "#0ea5e9";
+  #color = '#0ea5e9';
+  ticketUrlBase = '';
 
   /**
    * Creates a ScatterplotRenderer instance
@@ -26,13 +28,14 @@ class ScatterplotRenderer extends UIControlsRenderer {
    *   }
    * ];
    */
-  constructor(data) {
+  constructor(data, ticketUrlBase) {
     super(data);
+    this.ticketUrlBase = ticketUrlBase;
   }
 
   useEventBus(eventBus) {
     this.eventBus = eventBus;
-    this.eventBus?.addEventListener("change-time-range-cfd", this.updateBrush.bind(this));
+    this.eventBus?.addEventListener('change-time-range-cfd', this.updateBrush.bind(this));
   }
 
   getReportingDomain(noOfDays) {
@@ -75,23 +78,23 @@ class ScatterplotRenderer extends UIControlsRenderer {
         [0, 1],
         [this.width, this.focusHeight - this.margin.top + 1],
       ])
-      .on("brush", ({ selection }) => {
+      .on('brush', ({ selection }) => {
         this.currentSelectionDomain = selection.map(this.x.invert, this.x);
         this.updateChart(this.currentSelectionDomain);
         if (this.isUserBrushEvent && this.eventBus) {
-          this.eventBus?.emitEvents("change-time-range-scatterplot", this.currentSelectionDomain);
+          this.eventBus?.emitEvents('change-time-range-scatterplot', this.currentSelectionDomain);
         }
         this.isUserBrushEvent = true;
       })
-      .on("end", ({ selection }) => {
+      .on('end', ({ selection }) => {
         if (!selection) {
           this.gBrush.call(this.brush.move, defaultSelectionRange);
         }
       });
 
-    const brushArea = this.addClipPath(svgBrush, "scatterplot-brush-clip", this.width, this.focusHeight - this.margin.top + 1);
+    const brushArea = this.addClipPath(svgBrush, 'scatterplot-brush-clip', this.width, this.focusHeight - this.margin.top + 1);
     this.#drawScatterPlot(brushArea, this.data, this.x, this.y.copy().range([this.focusHeight - this.margin.top - 2, 2]));
-    this.drawXAxis(svgBrush.append("g"), this.x, "", this.focusHeight - this.margin.top);
+    this.drawXAxis(svgBrush.append('g'), this.x, '', this.focusHeight - this.margin.top);
     this.gBrush = brushArea;
     this.gBrush.call(this.brush).call(
       this.brush.move,
@@ -119,17 +122,17 @@ class ScatterplotRenderer extends UIControlsRenderer {
     const yDomain = [0, d3.max(this.data, (d) => d.noOfDays)];
     this.y = this.computeLinearScale(yDomain, [this.height, 0]).nice();
 
-    this.gx = this.svg.append("g");
-    this.gy = this.svg.append("g");
+    this.gx = this.svg.append('g');
+    this.gy = this.svg.append('g');
     this.drawXAxis(this.gx, this.x, this.rangeIncrementUnits);
     this.drawYAxis(this.gy, this.y);
   }
 
   #drawArea() {
-    this.chartArea = this.addClipPath(this.svg, "scatterplot-clip");
+    this.chartArea = this.addClipPath(this.svg, 'scatterplot-clip');
     this.#drawScatterPlot(this.chartArea, this.data, this.x, this.y);
     this.#drawPercentileLines(this.svg, this.data, this.y);
-    this.drawAxisLabels(this.svg, "Time", "# of delivery days");
+    this.drawAxisLabels(this.svg, 'Time', '# of delivery days');
   }
 
   updateChart(domain) {
@@ -143,10 +146,10 @@ class ScatterplotRenderer extends UIControlsRenderer {
     this.drawYAxis(this.gy, focusY);
 
     this.chartArea
-      .selectAll(".dot")
-      .attr("cx", (d) => focusX(d.delivered))
-      .attr("cy", (d) => focusY(d.noOfDays))
-      .attr("fill", this.#color);
+      .selectAll('.dot')
+      .attr('cx', (d) => focusX(d.delivered))
+      .attr('cy', (d) => focusY(d.noOfDays))
+      .attr('fill', this.#color);
     this.#drawPercentileLines(this.svg, focusData, focusY);
   }
 
@@ -154,60 +157,60 @@ class ScatterplotRenderer extends UIControlsRenderer {
     let axis;
     rangeIncrementUnits && this.setRangeIncrementUnits(rangeIncrementUnits);
     switch (rangeIncrementUnits) {
-      case "days":
+      case 'days':
         axis = d3
           .axisBottom(x)
           .tickArguments([d3.timeDay.every(1)])
           .tickFormat((d) => {
             const date = new Date(d);
             if (date.getUTCDay() === 0) {
-              return d3.timeFormat("%a %d/%m")(date);
+              return d3.timeFormat('%a %d/%m')(date);
             }
           });
         break;
-      case "weeks":
+      case 'weeks':
         axis = d3.axisBottom(x).ticks(d3.timeWeek);
         break;
-      case "months":
+      case 'months':
         axis = d3.axisBottom(x).ticks(d3.timeMonth);
         break;
       default:
         axis = d3.axisBottom(x);
     }
-    g.call(axis).attr("transform", `translate(0, ${height})`);
-    const outerXAxisTicks = g.append("g").attr("class", "outer-ticks").call(axis.tickSize(-height).tickFormat(""));
-    outerXAxisTicks.selectAll(".tick line").attr("opacity", 0.1);
+    g.call(axis).attr('transform', `translate(0, ${height})`);
+    const outerXAxisTicks = g.append('g').attr('class', 'outer-ticks').call(axis.tickSize(-height).tickFormat(''));
+    outerXAxisTicks.selectAll('.tick line').attr('opacity', 0.1);
   }
 
-  drawYAxis(gy, y, height = this.height) {
+  drawYAxis(gy, y) {
     const yAxis = d3.axisLeft(y).tickSize(-this.width);
-    gy.call(yAxis).selectAll(".tick line").attr("opacity", 0.1);
+    gy.call(yAxis).selectAll('.tick line').attr('opacity', 0.1);
   }
 
   #drawScatterPlot(chartArea, data, x, y) {
-    const tooltip = d3.select("body").append("a").attr("class", "tooltip").style("opacity", 0).attr("target", "_blank");
+    const tooltip = d3.select('body').append('a').attr('class', 'tooltip').style('opacity', 0).attr('target', '_blank');
 
     chartArea
-      .selectAll("dot")
+      .selectAll('dot')
       .data(data)
       .enter()
-      .append("circle")
-      .attr("class", "dot")
-      .attr("r", 5)
-      .attr("cx", (d) => x(d.delivered))
-      .attr("cy", (d) => y(d.noOfDays))
-      .style("cursor", "pointer")
-      .attr("fill", this.#color)
-      .on("click", function (event, d) {
-        tooltip.transition().duration(200).style("opacity", 0.9).style("pointer-events", "auto");
+      .append('circle')
+      .attr('class', 'dot')
+      .attr('r', 5)
+      .attr('cx', (d) => x(d.delivered))
+      .attr('cy', (d) => y(d.noOfDays))
+      .style('cursor', 'pointer')
+      .attr('fill', this.#color)
+      .on('click', function (event, d) {
+        tooltip.transition().duration(200).style('opacity', 0.9).style('pointer-events', 'auto');
         tooltip
           .html(d.ticketId)
-          .attr("href", `https://digitalpfizer.atlassian.net/browse/${d.ticketId}`)
-          .style("left", event.pageX + "px")
-          .style("top", event.pageY + "px");
+          .attr('href', `${this.ticketUrlBase}/${d.ticketId}`)
+          .style('left', event.pageX + 'px')
+          .style('top', event.pageY + 'px');
       });
-    tooltip.on("mouseout", () => {
-      tooltip.transition().duration(500).style("opacity", 0).style("pointer-events", "none");
+    tooltip.on('mouseout', () => {
+      tooltip.transition().duration(500).style('opacity', 0).style('pointer-events', 'none');
     });
   }
 
@@ -223,10 +226,10 @@ class ScatterplotRenderer extends UIControlsRenderer {
     const percentile3 = this.#computePercentileLine(dataSortedByNoOfDays, 0.85);
     const percentile4 = this.#computePercentileLine(dataSortedByNoOfDays, 0.95);
 
-    this.#drawPercentileLine(svg, y, percentile1, "50%", "p1");
-    this.#drawPercentileLine(svg, y, percentile2, "70%", "p2");
-    this.#drawPercentileLine(svg, y, percentile3, "85%", "p3");
-    this.#drawPercentileLine(svg, y, percentile4, "95%", "p4");
+    this.#drawPercentileLine(svg, y, percentile1, '50%', 'p1');
+    this.#drawPercentileLine(svg, y, percentile2, '70%', 'p2');
+    this.#drawPercentileLine(svg, y, percentile3, '85%', 'p3');
+    this.#drawPercentileLine(svg, y, percentile4, '95%', 'p4');
   }
 
   #drawPercentileLine(svg, y, percentile, text, percentileId) {
@@ -234,29 +237,29 @@ class ScatterplotRenderer extends UIControlsRenderer {
     if (percentileTextEl) {
       svg
         .select(`#y-text-${percentileId}`)
-        .attr("x", this.width + 4)
-        .attr("y", y(percentile) + 4);
-      svg.select(`#y-line-${percentileId}`).attr("x1", 0).attr("x2", this.width).attr("y1", y(percentile)).attr("y2", y(percentile));
+        .attr('x', this.width + 4)
+        .attr('y', y(percentile) + 4);
+      svg.select(`#y-line-${percentileId}`).attr('x1', 0).attr('x2', this.width).attr('y1', y(percentile)).attr('y2', y(percentile));
     } else {
       svg
-        .append("text")
-        .attr("text-anchor", "start")
-        .attr("x", this.width + 2)
-        .attr("y", y(percentile) + 4)
-        .attr("id", `y-text-${percentileId}`)
+        .append('text')
+        .attr('text-anchor', 'start')
+        .attr('x', this.width + 2)
+        .attr('y', y(percentile) + 4)
+        .attr('id', `y-text-${percentileId}`)
         .text(text)
-        .attr("fill", "red")
-        .style("font-size", "12px");
+        .attr('fill', 'red')
+        .style('font-size', '12px');
       svg
-        .append("line")
-        .attr("id", `y-line-${percentileId}`)
-        .style("stroke", "red")
-        .style("stroke-dasharray", "10, 5")
-        .style("stroke-width", 2)
-        .attr("x1", 0)
-        .attr("x2", this.width)
-        .attr("y1", y(percentile))
-        .attr("y2", y(percentile));
+        .append('line')
+        .attr('id', `y-line-${percentileId}`)
+        .style('stroke', 'red')
+        .style('stroke-dasharray', '10, 5')
+        .style('stroke-width', 2)
+        .attr('x1', 0)
+        .attr('x2', this.width)
+        .attr('y1', y(percentile))
+        .attr('y2', y(percentile));
     }
   }
 }

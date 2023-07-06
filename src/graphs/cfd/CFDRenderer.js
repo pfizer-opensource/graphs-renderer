@@ -1,13 +1,13 @@
-import { addDaysToDate, getNoOfDaysBetweenDates } from "../../utils/utils.js";
-import UIControlsRenderer from "../UIControlsRenderer.js";
-import * as d3 from 'd3'
+import { addDaysToDate, getNoOfDaysBetweenDates } from '../../utils/utils.js';
+import UIControlsRenderer from '../UIControlsRenderer.js';
+import * as d3 from 'd3';
 
 /**
  * Class representing a Cumulative Flow Diagram (CFD) graph renderer
  */
 class CFDRenderer extends UIControlsRenderer {
-  #keys = ["delivered", "verif_start", "dev_complete", "in_progress", "analysis_done", "analysis_active"];
-  #colorPalette = ["#22c55e", "#bbf7d0", "#8b5cf6", "#ddd6fe", "#0ea5e9", "#bae6fd"];
+  #keys = ['delivered', 'verif_start', 'dev_complete', 'in_progress', 'analysis_done', 'analysis_active'];
+  #colorPalette = ['#22c55e', '#bbf7d0', '#8b5cf6', '#ddd6fe', '#0ea5e9', '#bae6fd'];
   #colors = d3.scaleOrdinal().domain(this.#keys).range(this.#colorPalette);
   #stackedData;
 
@@ -44,7 +44,7 @@ class CFDRenderer extends UIControlsRenderer {
 
   useEventBus(eventBus) {
     this.eventBus = eventBus;
-    this.eventBus?.addEventListener("change-time-range-scatterplot", this.updateBrush.bind(this));
+    this.eventBus?.addEventListener('change-time-range-scatterplot', this.updateBrush.bind(this));
   }
 
   getReportingDomain(noOfDays) {
@@ -74,7 +74,7 @@ class CFDRenderer extends UIControlsRenderer {
 
   drawGraph(graphElementSelector) {
     this.#drawSvg(graphElementSelector);
-    this.svg.append("g").attr("transform", `translate(${this.margin.left}, ${this.margin.top})`);
+    this.svg.append('g').attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
     this.#drawAxis();
     this.#drawArea();
   }
@@ -88,15 +88,15 @@ class CFDRenderer extends UIControlsRenderer {
         [0, 1],
         [this.width, this.focusHeight - this.margin.top + 1],
       ])
-      .on("brush", ({ selection }) => {
+      .on('brush', ({ selection }) => {
         this.currentSelectionDomain = selection.map(this.x.invert, this.x);
         this.updateChart(this.currentSelectionDomain);
         if (this.isUserBrushEvent && this.eventBus) {
-          this.eventBus?.emitEvents("change-time-range-cfd", this.currentSelectionDomain);
+          this.eventBus?.emitEvents('change-time-range-cfd', this.currentSelectionDomain);
         }
         this.isUserBrushEvent = true;
       })
-      .on("end", ({ selection }) => {
+      .on('end', ({ selection }) => {
         if (!selection) {
           this.gBrush.call(this.brush.move, defaultSelectionRange);
         }
@@ -104,8 +104,8 @@ class CFDRenderer extends UIControlsRenderer {
 
     const brushArea = this.#computeArea(this.x, this.y.copy().range([this.focusHeight - this.margin.top, 4]));
     this.#drawStackedAreaChart(svgBrush, this.#stackedData, brushArea);
-    this.drawXAxis(svgBrush.append("g"), this.x, "", this.focusHeight - this.margin.top);
-    this.gBrush = svgBrush.append("g");
+    this.drawXAxis(svgBrush.append('g'), this.x, '', this.focusHeight - this.margin.top);
+    this.gBrush = svgBrush.append('g');
     this.gBrush.call(this.brush).call(
       this.brush.move,
       this.currentSelectionDomain.map((d) => this.x(d))
@@ -133,17 +133,17 @@ class CFDRenderer extends UIControlsRenderer {
     const yDomain = [0, d3.max(this.#stackedData[this.#stackedData.length - 1], (d) => d[1])];
     this.y = this.computeLinearScale(yDomain, [this.height, 0]).nice();
 
-    this.gx = this.svg.append("g");
-    this.gy = this.svg.append("g");
+    this.gx = this.svg.append('g');
+    this.gy = this.svg.append('g');
     this.drawXAxis(this.gx, this.x, this.rangeIncrementUnits);
     this.drawYAxis(this.gy, this.y);
   }
 
   #drawArea() {
     const area = this.#computeArea(this.x, this.y);
-    this.chartArea = this.addClipPath(this.svg, "cfd-clip");
+    this.chartArea = this.addClipPath(this.svg, 'cfd-clip');
     this.#drawStackedAreaChart(this.chartArea, this.#stackedData, area);
-    this.drawAxisLabels(this.svg, "Time", "# of tickets");
+    this.drawAxisLabels(this.svg, 'Time', '# of tickets');
     this.#drawLegend();
   }
 
@@ -157,37 +157,37 @@ class CFDRenderer extends UIControlsRenderer {
     this.drawYAxis(this.gy, focusY);
 
     this.chartArea
-      .selectAll("path")
-      .attr("class", (d) => "area " + d.key)
-      .style("fill", (d) => this.#colors(d.key))
-      .attr("d", this.#computeArea(focusX, focusY));
+      .selectAll('path')
+      .attr('class', (d) => 'area ' + d.key)
+      .style('fill', (d) => this.#colors(d.key))
+      .attr('d', this.#computeArea(focusX, focusY));
   }
 
   drawXAxis(g, x, rangeIncrementUnits, height = this.height) {
     let axis;
     rangeIncrementUnits && this.setRangeIncrementUnits(rangeIncrementUnits);
     switch (rangeIncrementUnits) {
-      case "days":
+      case 'days':
         axis = d3
           .axisBottom(x)
           .tickArguments([d3.timeDay.every(1)])
           .tickFormat((d) => {
             const date = new Date(d);
             if (date.getUTCDay() === 0) {
-              return d3.timeFormat("%a %d/%m")(date);
+              return d3.timeFormat('%a %d/%m')(date);
             }
           });
         break;
-      case "weeks":
+      case 'weeks':
         axis = d3.axisBottom(x).ticks(d3.timeWeek);
         break;
-      case "months":
+      case 'months':
         axis = d3.axisBottom(x).ticks(d3.timeMonth);
         break;
       default:
         axis = d3.axisBottom(x);
     }
-    g.call(axis).attr("transform", `translate(0, ${height})`);
+    g.call(axis).attr('transform', `translate(0, ${height})`);
   }
 
   #computeStackData() {
@@ -205,12 +205,12 @@ class CFDRenderer extends UIControlsRenderer {
 
   #drawStackedAreaChart(chartArea, data, area) {
     chartArea
-      .selectAll("areas")
+      .selectAll('areas')
       .data(data)
-      .join("path")
-      .attr("class", (d) => "area " + d.key)
-      .style("fill", (d) => this.#colors(d.key))
-      .attr("d", area);
+      .join('path')
+      .attr('class', (d) => 'area ' + d.key)
+      .style('fill', (d) => this.#colors(d.key))
+      .attr('d', area);
   }
 
   #drawLegend() {
@@ -219,27 +219,27 @@ class CFDRenderer extends UIControlsRenderer {
     const startX = 80;
     const startY = this.height + 40;
     this.svg
-      .selectAll("legend-rects")
+      .selectAll('legend-rects')
       .data(this.#keys)
-      .join("rect")
-      .attr("x", (d, i) => textSize * i + startX)
-      .attr("y", startY)
-      .attr("width", rectSize)
-      .attr("height", rectSize)
-      .style("fill", (d) => this.#colors(d));
+      .join('rect')
+      .attr('x', (_d, i) => textSize * i + startX)
+      .attr('y', startY)
+      .attr('width', rectSize)
+      .attr('height', rectSize)
+      .style('fill', (d) => this.#colors(d));
 
     this.svg
-      .selectAll("legend-labels")
+      .selectAll('legend-labels')
       .data(this.#keys)
-      .join("text")
-      .attr("x", (d, i) => rectSize + 6 + i * textSize + startX)
-      .attr("y", startY + rectSize / 2)
-      .style("fill", "black")
+      .join('text')
+      .attr('x', (_d, i) => rectSize + 6 + i * textSize + startX)
+      .attr('y', startY + rectSize / 2)
+      .style('fill', 'black')
       .text((d) => d)
-      .attr("text-anchor", "left")
-      .style("alignment-baseline", "middle")
-      .style("font-size", "12px")
-      .style("font-weight", "500");
+      .attr('text-anchor', 'left')
+      .style('alignment-baseline', 'middle')
+      .style('font-size', '12px')
+      .style('font-weight', '500');
   }
 }
 

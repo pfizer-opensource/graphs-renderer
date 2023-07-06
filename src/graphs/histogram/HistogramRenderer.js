@@ -1,11 +1,11 @@
-import Renderer from "../Renderer.js";
-import * as d3 from 'd3'
+import Renderer from '../Renderer.js';
+import * as d3 from 'd3';
 
 /**
  * Class representing a Histogram graph renderer
  */
 class HistogramRenderer extends Renderer {
-  #color = "#0ea5e9";
+  #color = '#0ea5e9';
   #padding = 3;
   #binnedData;
   #noOfBins = 10;
@@ -35,7 +35,7 @@ class HistogramRenderer extends Renderer {
   constructor(data, eventBus) {
     super(data);
     this.eventBus = eventBus;
-    this.eventBus?.addEventListener("change-time-range-scatterplot", (timeRange) => {
+    this.eventBus?.addEventListener('change-time-range-scatterplot', (timeRange) => {
       const currentSelectionData = this.data.filter((d) => d.delivered >= timeRange[0] && d.delivered <= timeRange[1]);
       this.#setXScale(currentSelectionData);
       this.#binnedData = this.#computeBinnedData(this.x, currentSelectionData);
@@ -75,51 +75,51 @@ class HistogramRenderer extends Renderer {
     this.#setXScale(this.data);
     this.#binnedData = this.#computeBinnedData(this.x, this.data);
     this.#setYScale(this.#binnedData);
-    this.gx = this.svg.append("g");
-    this.gy = this.svg.append("g");
+    this.gx = this.svg.append('g');
+    this.gy = this.svg.append('g');
     this.drawXAxis(this.gx, this.x);
     this.drawYAxis(this.gy, this.y);
   }
 
   #drawArea() {
-    this.chartArea = this.addClipPath(this.svg, "histogram-clip");
+    this.chartArea = this.addClipPath(this.svg, 'histogram-clip');
     this.#drawHistogram(this.chartArea, this.#binnedData, this.x, this.y);
     this.#drawPercentileLines(this.svg, this.data, this.x);
-    this.drawAxisLabels(this.svg, "# of delivery days", "# of tickets");
+    this.drawAxisLabels(this.svg, '# of delivery days', '# of tickets');
   }
 
   updateChart(focusData) {
     this.drawXAxis(this.gx, this.x);
     this.drawYAxis(this.gy, this.y);
 
-    const bars = this.chartArea.selectAll(".bar").data(this.#binnedData.filter((d) => d.length > 0));
+    const bars = this.chartArea.selectAll('.bar').data(this.#binnedData.filter((d) => d.length > 0));
     bars.exit().remove();
     bars
       .enter()
-      .append("rect")
-      .attr("class", "bar")
+      .append('rect')
+      .attr('class', 'bar')
       .merge(bars)
       .transition()
       .duration(100)
-      .attr("width", (d) => d3.max([0, this.x(d.x1) - this.x(d.x0) - 1]))
-      .attr("height", (d) => this.height - this.y(this.#yAccessor(d)))
-      .attr("x", (d) => this.x(d.x0))
-      .attr("y", (d) => this.y(this.#yAccessor(d)))
-      .attr("fill", this.#color);
+      .attr('width', (d) => d3.max([0, this.x(d.x1) - this.x(d.x0) - 1]))
+      .attr('height', (d) => this.height - this.y(this.#yAccessor(d)))
+      .attr('x', (d) => this.x(d.x0))
+      .attr('y', (d) => this.y(this.#yAccessor(d)))
+      .attr('fill', this.#color);
 
-    const texts = this.chartArea.selectAll(".bar-text").data(this.#binnedData.filter((d) => d.length > 0));
+    const texts = this.chartArea.selectAll('.bar-text').data(this.#binnedData.filter((d) => d.length > 0));
     texts.exit().remove();
     texts
       .enter()
-      .append("text")
-      .attr("class", "bar-text")
-      .attr("text-anchor", "middle")
+      .append('text')
+      .attr('class', 'bar-text')
+      .attr('text-anchor', 'middle')
       .merge(texts)
       .transition()
       .duration(100)
-      .attr("x", (d) => this.x(d.x0) + (this.x(d.x1) - this.x(d.x0) - 1) / 2 - this.#padding)
-      .attr("y", (d) => this.y(this.#yAccessor(d)))
-      .attr("font-size", 8)
+      .attr('x', (d) => this.x(d.x0) + (this.x(d.x1) - this.x(d.x0) - 1) / 2 - this.#padding)
+      .attr('y', (d) => this.y(this.#yAccessor(d)))
+      .attr('font-size', 8)
       .text(this.#yAccessor);
     this.#drawPercentileLines(this.svg, focusData, this.x);
   }
@@ -131,24 +131,24 @@ class HistogramRenderer extends Renderer {
 
   #drawHistogram(svg, data, x, y) {
     svg
-      .selectAll("rect")
+      .selectAll('rect')
       .data(data.filter((d) => d.length))
-      .join("rect")
-      .attr("class", "bar")
-      .attr("width", (d) => d3.max([0, x(d.x1) - x(d.x0) - 1]))
-      .attr("height", (d) => this.height - y(this.#yAccessor(d)))
-      .attr("x", (d) => x(d.x0))
-      .attr("y", (d) => y(this.#yAccessor(d)))
-      .attr("fill", this.#color);
+      .join('rect')
+      .attr('class', 'bar')
+      .attr('width', (d) => d3.max([0, x(d.x1) - x(d.x0) - 1]))
+      .attr('height', (d) => this.height - y(this.#yAccessor(d)))
+      .attr('x', (d) => x(d.x0))
+      .attr('y', (d) => y(this.#yAccessor(d)))
+      .attr('fill', this.#color);
 
     svg
-      .selectAll("text")
+      .selectAll('text')
       .data(data.filter((d) => d.length))
-      .join("text")
-      .attr("class", "bar-text")
-      .attr("x", (d) => x(d.x0) + (x(d.x1) - x(d.x0) - 1) / 2 - this.#padding)
-      .attr("y", (d) => y(this.#yAccessor(d)))
-      .attr("font-size", 8)
+      .join('text')
+      .attr('class', 'bar-text')
+      .attr('x', (d) => x(d.x0) + (x(d.x1) - x(d.x0) - 1) / 2 - this.#padding)
+      .attr('y', (d) => y(this.#yAccessor(d)))
+      .attr('font-size', 8)
       .text(this.#yAccessor);
   }
 
@@ -164,10 +164,10 @@ class HistogramRenderer extends Renderer {
     const percentile3 = this.#computePercentileLine(dataSortedByNoOfDays, 0.85);
     const percentile4 = this.#computePercentileLine(dataSortedByNoOfDays, 0.95);
 
-    this.#drawPercentileLine(svg, x, percentile1, "50%", "p1");
-    this.#drawPercentileLine(svg, x, percentile2, "70%", "p2");
-    this.#drawPercentileLine(svg, x, percentile3, "85%", "p3");
-    this.#drawPercentileLine(svg, x, percentile4, "95%", "p4");
+    this.#drawPercentileLine(svg, x, percentile1, '50%', 'p1');
+    this.#drawPercentileLine(svg, x, percentile2, '70%', 'p2');
+    this.#drawPercentileLine(svg, x, percentile3, '85%', 'p3');
+    this.#drawPercentileLine(svg, x, percentile4, '95%', 'p4');
   }
 
   #drawPercentileLine(svg, x, percentile, text, percentileId) {
@@ -175,30 +175,30 @@ class HistogramRenderer extends Renderer {
     if (percentileTextEl) {
       svg
         .select(`#x-text-${percentileId}`)
-        .attr("x", x(percentile) - 6)
-        .attr("y", -2);
-      svg.select(`#x-line-${percentileId}`).attr("x1", x(percentile)).attr("x2", x(percentile)).attr("y1", 0).attr("y2", this.height);
+        .attr('x', x(percentile) - 6)
+        .attr('y', -2);
+      svg.select(`#x-line-${percentileId}`).attr('x1', x(percentile)).attr('x2', x(percentile)).attr('y1', 0).attr('y2', this.height);
     } else {
       svg
-        .append("text")
-        .attr("text-anchor", "start")
-        .attr("x", x(percentile))
-        .attr("y", 0)
-        .attr("id", `x-text-${percentileId}`)
+        .append('text')
+        .attr('text-anchor', 'start')
+        .attr('x', x(percentile))
+        .attr('y', 0)
+        .attr('id', `x-text-${percentileId}`)
         .text(text)
-        .attr("fill", "red")
-        .style("font-size", "12px");
+        .attr('fill', 'red')
+        .style('font-size', '12px');
 
       svg
-        .append("line")
-        .attr("id", `x-line-${percentileId}`)
-        .style("stroke", "red")
-        .style("stroke-dasharray", "10, 5")
-        .style("stroke-width", 2)
-        .attr("x1", x(percentile))
-        .attr("x2", x(percentile))
-        .attr("y1", 0)
-        .attr("y2", this.height);
+        .append('line')
+        .attr('id', `x-line-${percentileId}`)
+        .style('stroke', 'red')
+        .style('stroke-dasharray', '10, 5')
+        .style('stroke-width', 2)
+        .attr('x1', x(percentile))
+        .attr('x2', x(percentile))
+        .attr('y1', 0)
+        .attr('y2', this.height);
     }
   }
 }

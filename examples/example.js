@@ -8,7 +8,7 @@ import {serviceData} from "./serviceData.js";
 import {EventBus} from "../src";
 
 let removedTicketTypes = ["task"];
-let removedRepos = ["tf-aws-electron-github-runner"];
+let removedRepos = ["wizard-lambda"];
 
 let data = processServiceData(serviceData, removedRepos, removedTicketTypes);
 if (!data || data.length === 0) {
@@ -56,8 +56,9 @@ function renderGraphs(data) {
     const scatterplotGraph = new ScatterplotGraph(data);
     //Compute the dataset for the scatterplot and histogram graphs
     const leadTimeDataSet = scatterplotGraph.computeDataSet(data);
+    const ticketUrlBase = "https://atlassian.net/browse/"
     //Create a ScatterplotRenderer
-    const scatterplotRenderer = new ScatterplotRenderer(leadTimeDataSet);
+    const scatterplotRenderer = new ScatterplotRenderer(leadTimeDataSet, ticketUrlBase);
     //Pass the created event bus to teh cfd graph
     scatterplotRenderer.useEventBus(eventBus);
     //Create a HistogramRenderer

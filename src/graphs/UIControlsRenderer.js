@@ -1,11 +1,11 @@
-import { readJsonFile } from "../utils/utils.js";
-import Renderer from "./Renderer.js";
+import { readJsonFile } from '../utils/utils.js';
+import Renderer from './Renderer.js';
 
 export default class UIControlsRenderer extends Renderer {
   currentSelectionDomain;
   defaultSelectionDomain;
   #defaultReportingRangeDays = 90;
-  #defaultRangeIncrementUnits = "weeks";
+  #defaultRangeIncrementUnits = 'weeks';
   reportingRangeDays = this.#defaultReportingRangeDays;
   rangeIncrementUnits = this.#defaultRangeIncrementUnits;
   gBrush;
@@ -14,8 +14,8 @@ export default class UIControlsRenderer extends Renderer {
 
   constructor(data) {
     super(data);
-    this.reportingRangeDays = localStorage.getItem("reportingRangeDays") || this.reportingRangeDays;
-    this.rangeIncrementUnits = localStorage.getItem("rangeIncrementUnits") || this.rangeIncrementUnits;
+    this.reportingRangeDays = localStorage.getItem('reportingRangeDays') || this.reportingRangeDays;
+    this.rangeIncrementUnits = localStorage.getItem('rangeIncrementUnits') || this.rangeIncrementUnits;
   }
 
   useBrush(brushElementSelector) {
@@ -40,8 +40,8 @@ export default class UIControlsRenderer extends Renderer {
     this.reportingRangeDaysElement = document.querySelector(reportingRangeDaysSelector);
     this.reportingRangeDaysElement.value = this.reportingRangeDays;
     this.currentSelectionDomain ||= this.getReportingDomain(this.reportingRangeDays);
-    this.reportingRangeDaysElement.addEventListener("keypress", (event) => {
-      if (event.key === "Enter") {
+    this.reportingRangeDaysElement.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
         this.reportingRangeDays = event.target.value;
         this.currentSelectionDomain = this.getReportingDomain(this.reportingRangeDays);
         this.brushSelector ? this.drawBrush() : this.updateChart(this.currentSelectionDomain);
@@ -50,7 +50,7 @@ export default class UIControlsRenderer extends Renderer {
 
     this.rangeIncrementUnitsElement = document.querySelector(rangeIncrementUnits);
     this.rangeIncrementUnitsElement.value = this.rangeIncrementUnits;
-    this.rangeIncrementUnitsElement.addEventListener("change", (event) => {
+    this.rangeIncrementUnitsElement.addEventListener('change', (event) => {
       this.rangeIncrementUnits = event.target.value;
       this.drawXAxis(this.gx, this.x.copy().domain(this.currentSelectionDomain), this.rangeIncrementUnits);
     });
@@ -59,16 +59,16 @@ export default class UIControlsRenderer extends Renderer {
 
   useConfigLoading(loadConfigInputSelector, resetConfigInputSelector) {
     this.loadConfigButton = document.querySelector(loadConfigInputSelector);
-    const fileChosenElement = document.querySelector("#config-file-chosen");
-    this.loadConfigButton.addEventListener("change", async (event) => {
+    const fileChosenElement = document.querySelector('#config-file-chosen');
+    this.loadConfigButton.addEventListener('change', async (event) => {
       const file = event.target.files[0];
       try {
         const jsonConfig = await readJsonFile(file);
         fileChosenElement.textContent = file.name;
         this.reportingRangeDays = jsonConfig.reportingRangeDays || this.reportingRangeDays;
         this.rangeIncrementUnits = jsonConfig.rangeIncrementUnits || this.rangeIncrementUnits;
-        localStorage.setItem("reportingRangeDays", this.reportingRangeDays);
-        localStorage.setItem("rangeIncrementUnits", this.rangeIncrementUnits);
+        localStorage.setItem('reportingRangeDays', this.reportingRangeDays);
+        localStorage.setItem('rangeIncrementUnits', this.rangeIncrementUnits);
         this.currentSelectionDomain = this.getReportingDomain(this.reportingRangeDays);
         this.brushSelector ? this.drawBrush() : this.updateChart(this.currentSelectionDomain);
       } catch (err) {
@@ -77,9 +77,9 @@ export default class UIControlsRenderer extends Renderer {
       }
     });
     this.resetConfigButton = document.querySelector(resetConfigInputSelector);
-    this.resetConfigButton.addEventListener("click", () => {
-      localStorage.removeItem("reportingRangeDays");
-      localStorage.removeItem("rangeIncrementUnits");
+    this.resetConfigButton.addEventListener('click', () => {
+      localStorage.removeItem('reportingRangeDays');
+      localStorage.removeItem('rangeIncrementUnits');
       this.reportingRangeDays = this.#defaultReportingRangeDays;
       this.rangeIncrementUnits = this.#defaultRangeIncrementUnits;
       this.currentSelectionDomain = this.getReportingDomain(this.reportingRangeDays);
@@ -103,6 +103,6 @@ export default class UIControlsRenderer extends Renderer {
   }
 
   drawBrush() {
-    throw new Error("Method not implemented!");
+    throw new Error('Method not implemented!');
   }
 }

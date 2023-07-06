@@ -26,7 +26,7 @@ class ScatterplotGraph {
    *     "analysis_done": "timestamp",
    *     "delivered": "timestamp",
    *     "dev_complete": "timestamp",
-   *     "github_repo": "pfizer/github_repo",
+   *     "github_repo": "github_repo_name",
    *     "in_progress": "timestamp",
    *     "indexes": [],
    *     "tags": [],

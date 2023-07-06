@@ -5,22 +5,25 @@
   "main": "./src/index.js",
   "scripts": {
     "postinstall": "webpack --config webpack.config.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint 'src/**/*.{js,jsx}'",
+    "lint:fix": "eslint 'src/**/*.{js,jsx}' --fix",
+    "format": "prettier --write 'src/**/*.{js,jsx,json,css}'"
   },
   "author": "Claudia Givan",
   "license": "ISC",
-  "files": [
-    "dist/**/*",
-    "package.json"
-  ],
   "dependencies": {
-    "d3": "^7.6.1",
     "@babel/core": "^7.22.5",
     "@babel/preset-env": "^7.22.5",
     "babel-loader": "^9.1.2",
+    "d3": "^7.6.1",
     "imports-loader": "^4.0.1",
     "webpack": "^5.88.1",
     "webpack-cli": "^5.1.4"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "eslint": "^8.44.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^3.0.0"
+  }
 }
