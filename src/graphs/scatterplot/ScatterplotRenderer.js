@@ -1,6 +1,7 @@
 import { getNoOfDaysBetweenDates, addDaysToDate } from '../../utils/utils.js';
 import UIControlsRenderer from '../UIControlsRenderer.js';
 import * as d3 from 'd3';
+import '../../css/styles.css';
 
 /**
  * Class representing a Scatterplot graph renderer
@@ -188,7 +189,19 @@ class ScatterplotRenderer extends UIControlsRenderer {
   }
 
   #drawScatterPlot(chartArea, data, x, y) {
-    const tooltip = d3.select('body').append('a').attr('class', 'tooltip').style('opacity', 0).attr('target', '_blank');
+    const tooltip = d3
+      .select('body')
+      .append('a')
+      .attr('class', 'tooltip')
+      .style('position', 'absolute')
+      .style('padding', '8px')
+      .style('font-size', '14px')
+      .style('background-color', 'lightsteelblue')
+      .style('text-decoration', 'underline')
+      .style('border-radius', '8px')
+      .style('z-index', '1')
+      .style('cursor', 'pointer')
+      .attr('target', '_blank');
 
     chartArea
       .selectAll('dot')
