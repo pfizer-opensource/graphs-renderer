@@ -4,12 +4,12 @@ import ScatterplotGraph from "../src/graphs/scatterplot/ScatterplotGraph";
 import ScatterplotRenderer from "../src/graphs/scatterplot/ScatterplotRenderer";
 import HistogramRenderer from "../src/graphs/histogram/HistogramRenderer";
 import {processServiceData} from "../src";
-import {serviceData} from "./serviceData.js";
+import {exampleData} from "./exampleData.js";
 import {EventBus} from "../src";
 
 let removedTicketTypes = ["task"];
 let removedRepos = ["wizard-lambda"];
-
+let serviceData = exampleData
 let data = processServiceData(serviceData, removedRepos, removedTicketTypes);
 if (!data || data.length === 0) {
     console.log("There is no data for this service!");

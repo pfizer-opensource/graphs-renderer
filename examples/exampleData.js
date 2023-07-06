@@ -1,4 +1,4 @@
-export const serviceData = {
+export const exampleData = {
     "spell-parser":
         [
             {
