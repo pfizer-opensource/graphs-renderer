@@ -1,7 +1,6 @@
 import { getNoOfDaysBetweenDates, addDaysToDate } from '../../utils/utils.js';
 import UIControlsRenderer from '../UIControlsRenderer.js';
 import * as d3 from 'd3';
-import '../../css/styles.css';
 
 /**
  * Class representing a Scatterplot graph renderer
