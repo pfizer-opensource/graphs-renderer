@@ -5,9 +5,11 @@
   "main": "./src/index.js",
   "scripts": {
     "postinstall": "webpack --config webpack.config.js",
-    "lint": "eslint 'src/**/*.{js,jsx}'",
+    "lint": "eslint 'src/**/*.{js,jsx}' --max-warnings=0",
     "lint:fix": "eslint 'src/**/*.{js,jsx}' --fix",
-    "format": "prettier --write 'src/**/*.{js,jsx,json,css}'"
+    "prettier": "prettier 'src/**/*.{js,jsx,json,css}' --check",
+    "format": "prettier --write 'src/**/*.{js,jsx,json,css}'",
+    "check": "npm run prettier && npm run lint"
   },
   "author": "Claudia Givan",
   "license": "ISC",
