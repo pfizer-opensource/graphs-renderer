@@ -74,6 +74,7 @@ class CFDGraph {
     const maxDate = d3.max(this.data, (d) => d.delivered);
     for (let i = new Date(minDate * 1000); i < new Date(maxDate * 1000); i.setDate(i.getDate() + 1)) {
       const currentDate = new Date(i);
+      currentDate.setHours(0, 0, 0, 0);
       dataSet.push({
         date: currentDate,
         delivered: this.#getNoOfTicketsInDeliveredState(currentDate.getTime() / 1000),
@@ -85,7 +86,9 @@ class CFDGraph {
       });
     }
     if (dataSet.length > 0) {
-      dataSet[dataSet.length - 1].date = new Date(maxDate * 1000);
+      const currentDate = new Date(maxDate * 1000);
+      currentDate.setHours(0, 0, 0, 0);
+      dataSet[dataSet.length - 1].date = currentDate;
     }
     return dataSet;
   }

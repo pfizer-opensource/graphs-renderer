@@ -48,4 +48,4 @@ To see usage examples of the library and the data format for the graph refer to 
 
 ## Examples
 There are some examples demonstrating the usage of `graphs-renderer` library. 
-You can find the examples in the [examples](./examples) directory.
+You can find the examples in the [examples](examples) directory.

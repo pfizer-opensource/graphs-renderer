@@ -1,5 +1,6 @@
-import { addDaysToDate, getNoOfDaysBetweenDates } from '../../utils/utils.js';
+import { addDaysToDate, getNoOfDaysBetweenDates, areDatesEqual, formatDateToLocalString } from '../../utils/utils.js';
 import UIControlsRenderer from '../UIControlsRenderer.js';
+import styles from '../tooltipStyles.module.css';
 import * as d3 from 'd3';
 
 /**
@@ -10,6 +11,8 @@ class CFDRenderer extends UIControlsRenderer {
   #colorPalette = ['#22c55e', '#bbf7d0', '#8b5cf6', '#ddd6fe', '#0ea5e9', '#bae6fd'];
   #colors = d3.scaleOrdinal().domain(this.#keys).range(this.#colorPalette);
   #stackedData;
+  currentXScale;
+  currentYScale;
 
   /**
    * Creates a new CFDRenderer instance
@@ -40,11 +43,71 @@ class CFDRenderer extends UIControlsRenderer {
    */
   constructor(data) {
     super(data);
+    console.table(data);
   }
 
   useEventBus(eventBus) {
     this.eventBus = eventBus;
     this.eventBus?.addEventListener('change-time-range-scatterplot', this.updateBrush.bind(this));
+  }
+
+  useObservationLogging(observations) {
+    if (observations) {
+      this.cfdTooltip = d3.select('body').append('div').attr('class', styles.tooltip).attr('id', 'c-tooltip').style('opacity', 0);
+      this.cfdLine = this.chartArea.append('line').attr('id', 'cfd-line').attr('stroke', 'black').style('display', 'none');
+      this.chartArea.on('mouseleave', () => this.hideTooltip());
+      this.markObservations(observations);
+    }
+  }
+
+  markObservations(observations) {
+    if (observations) {
+      this.observations = observations;
+      const triangleHeight = 12;
+      const triangleBase = 8;
+      const trianglePath = `M0,0 L${triangleBase},0 L${triangleBase / 2},-${triangleHeight} Z`;
+      this.chartArea
+        .selectAll('observations')
+        .data(observations.data.rows.filter((d) => d.chart_type === 'CFD'))
+        .join('path')
+        .attr('class', 'observation-marker')
+        .attr('d', trianglePath)
+        .attr('transform', (d) => {
+          const date = new Date(d.date_from);
+          date.setHours(0, 0, 0, 0);
+          return `translate(${this.currentXScale(date)}, ${this.height})`;
+        })
+        .style('fill', 'black');
+    }
+  }
+
+  hideTooltip() {
+    this.cfdTooltip.transition().duration(100).style('opacity', 0).style('pointer-events', 'none');
+    this.cfdLine.transition().duration(100).style('display', 'none');
+  }
+
+  showTooltip(event) {
+    const tooltipWidth = this.cfdTooltip.node().getBoundingClientRect().width;
+    this.cfdLine
+      .attr('stroke', 'black')
+      .attr('y1', 0)
+      .attr('y2', event.lineY)
+      .attr('x1', event.lineX)
+      .attr('x2', event.lineX)
+      .style('display', null);
+    this.cfdTooltip.selectAll('*').remove();
+    this.cfdTooltip.transition().duration(100).style('opacity', 0.9).style('pointer-events', 'auto');
+    this.cfdTooltip
+      .style('left', event.tooltipLeft - tooltipWidth + 'px')
+      .style('top', event.tooltipTop + 'px')
+      .style('pointer-events', 'auto')
+      .style('opacity', 0.9)
+      .append('p')
+      .text(formatDateToLocalString(event.date));
+    event.metrics.averageCycleTime > 0 && this.cfdTooltip.append('p').text(`Average cycle time: ${event.metrics.averageCycleTime} days`);
+    event.metrics.averageLeadTime > 0 && this.cfdTooltip.append('p').text(`Average lead time: ${event.metrics.averageLeadTime} days`);
+    event.metrics.throughput > 0 && this.cfdTooltip.append('p').text(`Throughput: ${event.metrics.throughput} tickets`);
+    event.observationBody && this.cfdTooltip.append('p').text('Observation: ' + event.observationBody);
   }
 
   getReportingDomain(noOfDays) {
@@ -142,25 +205,109 @@ class CFDRenderer extends UIControlsRenderer {
   #drawArea() {
     const area = this.#computeArea(this.x, this.y);
     this.chartArea = this.addClipPath(this.svg, 'cfd-clip');
+    this.chartArea.append('rect').attr('width', '100%').attr('height', '100%').attr('id', 'cfd-area').attr('fill', 'transparent');
+    this.chartArea.on('mousemove', (event) => this.handleMouseEvent(event, 'cfd-mousemove'));
+    this.chartArea.on('click', (event) => this.handleMouseEvent(event, 'cfd-click'));
     this.#drawStackedAreaChart(this.chartArea, this.#stackedData, area);
     this.drawAxisLabels(this.svg, 'Time', '# of tickets');
     this.#drawLegend();
   }
 
+  handleMouseEvent(event, eventName) {
+    if (this.observations) {
+      const coords = d3.pointer(event, d3.select('#cfd-clip').node()); // Get the mouse x-position
+      const xPosition = coords[0];
+      const yPosition = coords[1];
+      const date = this.currentXScale.invert(xPosition);
+      const cumulativeCountOfWorkItems = this.currentYScale.invert(yPosition);
+      const metrics = this.#computeMetrics(date, Math.floor(cumulativeCountOfWorkItems));
+      const observation = this.observations.data.rows.find((o) => o.chart_type === 'CFD' && areDatesEqual(o.date_from, date));
+      const data = {
+        date: date,
+        lineX: xPosition,
+        lineY: this.height,
+        tooltipLeft: event.pageX,
+        tooltipTop: event.pageY,
+        metrics: metrics,
+        observationBody: observation?.body,
+        observationId: observation?.id,
+      };
+      this.showTooltip(data);
+      this.eventBus?.emitEvents(eventName, data);
+    }
+  }
+
+  #getNoOfItems(currentData, state) {
+    let cumulativeCount = 0;
+    const lastIndex = this.#keys.indexOf(state);
+    for (let stateIndex = 0; stateIndex <= lastIndex; stateIndex++) {
+      cumulativeCount += currentData[this.#keys[stateIndex]];
+    }
+    return cumulativeCount;
+  }
+
+  #getCurrentStateIndex(currentCumulativeCount, currentDataEntry) {
+    let cumulativeCount = 0;
+    for (let stateIndex = 0; stateIndex < this.#keys.length; stateIndex++) {
+      cumulativeCount += currentDataEntry[this.#keys[stateIndex]];
+      if (currentCumulativeCount <= cumulativeCount) {
+        return stateIndex;
+      }
+    }
+    return -1;
+  }
+
+  #computeMetrics(currentDate, currentCumulativeCount) {
+    currentDate = new Date(currentDate);
+    const currentDataEntry = this.data.find((d) => areDatesEqual(new Date(d.date), currentDate));
+    const currentStateIndex = this.#getCurrentStateIndex(currentCumulativeCount, currentDataEntry);
+    const currentStateCumulativeCount = this.#getNoOfItems(currentDataEntry, this.#keys[currentStateIndex]);
+    const currentDeliveredItems = currentDataEntry.delivered;
+    let cycleTimeDateBefore = null;
+    let leadTimeDateBefore = null;
+    for (const entry of this.data) {
+      const entryDate = new Date(entry.date);
+      const cycleTimeCumulativeCount = this.#getNoOfItems(entry, this.#keys[currentStateIndex + 1]);
+      const leadTimeCumulativeCount = this.#getNoOfItems(entry, this.#keys[this.#keys.length - 1]);
+      if (entryDate < currentDate && cycleTimeCumulativeCount <= currentStateCumulativeCount) {
+        cycleTimeDateBefore = entryDate;
+      }
+      if (entryDate < currentDate && leadTimeCumulativeCount <= currentDeliveredItems) {
+        leadTimeDateBefore = entryDate;
+      }
+    }
+    const averageCycleTime =
+      cycleTimeDateBefore && currentDate ? Math.floor(getNoOfDaysBetweenDates(cycleTimeDateBefore, currentDate)) : null;
+    const averageLeadTime = leadTimeDateBefore && currentDate ? Math.floor(getNoOfDaysBetweenDates(leadTimeDateBefore, currentDate)) : null;
+    let throughput = 0;
+    if (averageLeadTime) {
+      const diff = (this.#getNoOfItems(currentDataEntry, this.#keys[this.#keys.length - 1]) - currentDeliveredItems) / averageLeadTime;
+      throughput = parseFloat(diff.toFixed(2));
+    }
+    return {
+      currentState: this.#keys[currentStateIndex],
+      cycleTimeDateBefore: formatDateToLocalString(cycleTimeDateBefore),
+      leadTimeDateBefore: formatDateToLocalString(leadTimeDateBefore),
+      averageCycleTime,
+      averageLeadTime,
+      throughput,
+    };
+  }
+
   updateChart(domain) {
-    //get max y value before max focus date
     const maxY = d3.max(this.#stackedData[this.#stackedData.length - 1], (d) => (d.data.date <= domain[1] ? d[1] : -1));
     this.setReportingRangeDays(getNoOfDaysBetweenDates(domain[0], domain[1]));
-    const focusX = this.x.copy().domain(domain);
-    const focusY = this.y.copy().domain([0, maxY]).nice();
-    this.drawXAxis(this.gx, focusX, this.rangeIncrementUnits, this.height);
-    this.drawYAxis(this.gy, focusY);
+    this.currentXScale = this.x.copy().domain(domain);
+    this.currentYScale = this.y.copy().domain([0, maxY]).nice();
+    this.drawXAxis(this.gx, this.currentXScale, this.rangeIncrementUnits, this.height);
+    this.drawYAxis(this.gy, this.currentYScale);
 
     this.chartArea
       .selectAll('path')
       .attr('class', (d) => 'area ' + d.key)
       .style('fill', (d) => this.#colors(d.key))
-      .attr('d', this.#computeArea(focusX, focusY));
+      .attr('d', this.#computeArea(this.currentXScale, this.currentYScale));
+    this.markObservations(this.observations);
   }
 
   drawXAxis(g, x, rangeIncrementUnits, height = this.height) {
@@ -222,7 +369,7 @@ class CFDRenderer extends UIControlsRenderer {
       .selectAll('legend-rects')
       .data(this.#keys)
       .join('rect')
-      .attr('x', (_d, i) => textSize * i + startX)
+      .attr('x', (_, i) => textSize * i + startX)
       .attr('y', startY)
       .attr('width', rectSize)
       .attr('height', rectSize)
@@ -232,7 +379,7 @@ class CFDRenderer extends UIControlsRenderer {
       .selectAll('legend-labels')
       .data(this.#keys)
       .join('text')
-      .attr('x', (_d, i) => rectSize + 6 + i * textSize + startX)
+      .attr('x', (_, i) => rectSize + 6 + i * textSize + startX)
       .attr('y', startY + rectSize / 2)
       .style('fill', 'black')
       .text((d) => d)

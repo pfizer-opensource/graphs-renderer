@@ -154,7 +154,7 @@ class HistogramRenderer extends Renderer {
 
   #computePercentileLine(data, percent) {
     const percentileIndex = Math.floor(data.length * percent);
-    return data[percentileIndex].noOfDays;
+    return data[percentileIndex]?.noOfDays;
   }
 
   #drawPercentileLines(svg, data, x) {
@@ -163,11 +163,10 @@ class HistogramRenderer extends Renderer {
     const percentile2 = this.#computePercentileLine(dataSortedByNoOfDays, 0.7);
     const percentile3 = this.#computePercentileLine(dataSortedByNoOfDays, 0.85);
     const percentile4 = this.#computePercentileLine(dataSortedByNoOfDays, 0.95);
-
-    this.#drawPercentileLine(svg, x, percentile1, '50%', 'p1');
-    this.#drawPercentileLine(svg, x, percentile2, '70%', 'p2');
-    this.#drawPercentileLine(svg, x, percentile3, '85%', 'p3');
-    this.#drawPercentileLine(svg, x, percentile4, '95%', 'p4');
+    percentile1 && this.#drawPercentileLine(svg, x, percentile1, '50%', 'p1');
+    percentile2 && this.#drawPercentileLine(svg, x, percentile2, '70%', 'p2');
+    percentile3 && this.#drawPercentileLine(svg, x, percentile3, '85%', 'p3');
+    percentile4 && this.#drawPercentileLine(svg, x, percentile4, '95%', 'p4');
   }
 
   #drawPercentileLine(svg, x, percentile, text, percentileId) {

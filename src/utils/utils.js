@@ -26,3 +26,21 @@ export function addDaysToDate(date, noOfDays) {
 export function getNoOfDaysBetweenDates(startDate, finalDate) {
   return (finalDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
 }
+
+export function areDatesEqual(date1, date2) {
+  const newDate1 = new Date('' + date1);
+  const newDate2 = new Date('' + date2);
+  return (
+    newDate1.getFullYear() === newDate2.getFullYear() &&
+    newDate1.getMonth() === newDate2.getMonth() &&
+    newDate1.getDate() === newDate2.getDate()
+  );
+}
+
+export function formatDateToLocalString(date) {
+  return new Date(date).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}

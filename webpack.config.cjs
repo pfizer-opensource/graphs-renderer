@@ -2,11 +2,14 @@ const path = require('path');
 
 module.exports = {
     entry: './src/index.js',
+    experiments: {
+        outputModule: true
+    },
     output: {
         filename: 'graphs-renderer.js',
         path: path.resolve(__dirname, 'dist'),
-        library: 'graphs-renderer',
-        libraryTarget: 'umd',
+        // library: 'graphs-renderer',
+        libraryTarget: 'module',
     },
     module: {
         rules: [
@@ -29,6 +32,25 @@ module.exports = {
                     },
                 },
             },
+            {
+                test: /\.css$/,
+                use: [
+                    'style-loader',
+                    {
+                        loader: 'css-loader',
+                        options: {
+                            modules: {
+                                localIdentName: '[name]__[local]--[hash:base64:5]'
+                            }
+                        }
+                    }
+                ]
+            },
+            {
+                test: /\.css$/,
+                exclude: /\.module\.css$/,
+                use: ['style-loader', 'css-loader']
+            }
         ],
     },
 };

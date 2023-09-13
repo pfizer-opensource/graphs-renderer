@@ -1,30 +1,33 @@
-import CFDGraph from "../src/graphs/cfd/CFDGraph";
-import CFDRenderer from "../src/graphs/cfd/CFDRenderer";
-import ScatterplotGraph from "../src/graphs/scatterplot/ScatterplotGraph";
-import ScatterplotRenderer from "../src/graphs/scatterplot/ScatterplotRenderer";
-import HistogramRenderer from "../src/graphs/histogram/HistogramRenderer";
-import {processServiceData} from "../src";
 import {exampleData} from "./exampleData.js";
-import {EventBus} from "../src";
+import {
+    CFDGraph,
+    CFDRenderer,
+    ScatterplotGraph,
+    ScatterplotRenderer,
+    HistogramRenderer,
+    ObservationLoggingService,
+    processServiceData,
+    eventBus
+} from "../dist/graphs-renderer.js";
+import {initializeForm,toggleRightSidebar} from "./sidebars.js"
 
 let removedTicketTypes = ["task"];
 let removedRepos = ["wizard-lambda"];
 let serviceData = exampleData
+let serviceId = "0a95c-9151-448e"
 let data = processServiceData(serviceData, removedRepos, removedTicketTypes);
 if (!data || data.length === 0) {
     console.log("There is no data for this service!");
 } else {
-    renderGraphs(data);
+    renderGraphs(data, serviceId);
 }
 
-function renderGraphs(data) {
-    //Create an event bus for event driven communication between graphs
-    const eventBus = new EventBus();
+async function renderGraphs(data, serviceId) {
     //The Load and reset config input buttons css selectors
     const loadConfigInputSelector = "#load-config-input";
     const resetConfigInputSelector = "#reset-config-input";
     //The controls div css selector that contains the reporting range days input and the x axis labeling units dropdown
-    const cfdUIControlsElementSelector = "#controls-div";
+    const controlsElementSelector = "#controls-div";
 
     //The cfd area chart and brush window elements css selectors
     const cfdGraphElementSelector = "#cfd-area-div";
@@ -41,7 +44,7 @@ function renderGraphs(data) {
         if (cfdGraphDataSet.length > 0) {
             cfdRenderer.drawGraph(cfdGraphElementSelector);
             document.querySelector(cfdBrushElementSelector) && cfdRenderer.useBrush(cfdBrushElementSelector);
-            document.querySelector(cfdUIControlsElementSelector) && cfdRenderer.useControls("#reporting-range-input", "#range-increments-select");
+            document.querySelector(controlsElementSelector) && cfdRenderer.useControls("#reporting-range-input", "#range-increments-select");
             document.querySelector(loadConfigInputSelector) && cfdRenderer.useConfigLoading(loadConfigInputSelector, resetConfigInputSelector);
         } else {
             cfdRenderer.clearGraph(cfdGraphElementSelector, cfdBrushElementSelector);
@@ -56,9 +59,8 @@ function renderGraphs(data) {
     const scatterplotGraph = new ScatterplotGraph(data);
     //Compute the dataset for the scatterplot and histogram graphs
     const leadTimeDataSet = scatterplotGraph.computeDataSet(data);
-    const ticketUrlBase = "https://atlassian.net/browse/"
     //Create a ScatterplotRenderer
-    const scatterplotRenderer = new ScatterplotRenderer(leadTimeDataSet, ticketUrlBase);
+    const scatterplotRenderer = new ScatterplotRenderer(leadTimeDataSet);
     //Pass the created event bus to teh cfd graph
     scatterplotRenderer.useEventBus(eventBus);
     //Create a HistogramRenderer
@@ -68,7 +70,7 @@ function renderGraphs(data) {
             scatterplotRenderer.drawGraph(scatterplotGraphElementSelector);
             document.querySelector(histogramGraphElementSelector) && histogramRenderer.drawGraph(histogramGraphElementSelector);
             document.querySelector(scatterplotBrushElementSelector) && scatterplotRenderer.useBrush(scatterplotBrushElementSelector);
-            document.querySelector(scatterplotUIControlsElementSelector) &&
+            document.querySelector(controlsElementSelector) &&
             scatterplotRenderer.useControls("#reporting-range-input", "#range-increments-select");
             document.querySelector(loadConfigInputSelector) &&
             scatterplotRenderer.useConfigLoading(loadConfigInputSelector, resetConfigInputSelector);
@@ -77,4 +79,47 @@ function renderGraphs(data) {
             histogramRenderer.clearGraph(histogramGraphElementSelector);
         }
     }
+    await useObservationLogging(scatterplotRenderer, cfdRenderer, serviceId);
+}
+
+async function useObservationLogging(scatterplotRenderer, cfdRenderer, serviceId) {
+    const observationLoggingServiceURL = "#";
+    const workTicketsURL = "#";
+    const observationLoggingService = new ObservationLoggingService(observationLoggingServiceURL, serviceId);
+    await observationLoggingService.loadObservations();
+    scatterplotRenderer.useObservationLogging(observationLoggingService.observationsByService, workTicketsURL);
+    cfdRenderer.useObservationLogging(observationLoggingService.observationsByService);
+
+    eventBus.addEventListener("scatterplot-click", (event) => {
+        initializeForm({...event, chartType: "SCATTERPLOT", serviceId});
+        toggleRightSidebar(true);
+    });
+
+    eventBus.addEventListener("cfd-click", (event) => {
+        initializeForm({...event, chartType: "CFD", serviceId});
+        toggleRightSidebar(true);
+    });
+
+    eventBus.addEventListener("submit-observation-form", async (observation) => {
+        let observationResponse;
+        const observationId = observation.data.observation_id;
+        delete observation.data.observation_id;
+        if (observationId) {
+            observationResponse = await observationLoggingService.updateObservation(observation, observationId);
+        } else {
+            observationResponse = await observationLoggingService.addObservation(observation);
+        }
+        if (observationResponse) {
+            console.log(observationResponse);
+            toggleRightSidebar(false);
+            if (observation.data.chart_type === "SCATTERPLOT") {
+                scatterplotRenderer.hideTooltip();
+                scatterplotRenderer.markObservations(observationLoggingService.observationsByService);
+            }
+            if (observation.data.chart_type === "CFD") {
+                cfdRenderer.hideTooltip();
+                cfdRenderer.markObservations(observationLoggingService.observationsByService);
+            }
+        }
+    });
 }

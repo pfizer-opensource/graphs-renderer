@@ -58,8 +58,8 @@ export default class Renderer {
       .append('svg:rect')
       .attr('width', width)
       .attr('height', height)
-      .attr('x', 1)
-      .attr('y', 1);
+      .attr('x', 0)
+      .attr('y', 0);
 
     return svg.append('g').attr('clip-path', `url(#${clipId})`);
   }

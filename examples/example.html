@@ -3,18 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <title>Graphs Example</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
 <div>
-    <h2>CFD graph</h2>
-    <div id="cfd"></div>
-    <div id="cfd-brush"></div>
-    <h2>Scatterplot graph</h2>
-    <div id="scatterplot"></div>
-    <div id="scatterplot-brush"></div>
-    <h2>Histogram graph</h2>
-    <div id="histogram"></div>
+    <div id="layout">
+        <h1 class="py-4 text-center font-bold bg-black text-white"> Graphs library</h1>
+        <div class="absolute z-10 w-8 border-2 border-black bg-black transition-width duration-200 overflow-x-hidden"
+             id="left-sidebar">
+            <button class="w-full h-10 p-1" id="left-sidebar-button">
+                <img class="w-5 h-5 mx-auto" id="left-sidebar-arrow-img" src="./images/double-right-arrowhead.svg"/>
+            </button>
+            <div class="hidden text-white p-2" id="left-sidebar-content">
+                <h3 class="pl-1">Legend:</h3>
+                <div>
+                    <p class="my-2">
+                        Predictability turns out to be more important than maximizing utilization. To provide better
+                        predictability to stakeholders
+                        and customers, start by focusing on stabilizing the rate that work items flow through the system.
+                    </p>
+                    <p class="my-2">
+                        <b>Lead Time</b> is the average time a work items spends in a system Operational definition:
+                        From when a team commits to work
+                        until PR merge
+                    </p>
+                    <p class="my-2">
+                        <b>Work in Progress</b> (WIP) is the set of work started but not yet completed or abandoned
+                        Operational definition: Use the
+                        same start and end time criteria as used for Lead Time
+                    </p>
+                    <p class="my-2">
+                        <b>Throughput</b> is the average rate the work items enter and exit the system Operational
+                        definition: Calculated as Lead Time
+                        divided by WIP
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div
+                class="absolute z-10 w-8 border-2 border-black bg-black transition-width duration-200 overflow-x-hidden right-0"
+                id="right-sidebar">
+            <button class="w-full h-10 p-1" id="right-sidebar-button">
+                <img class="w-5 h-5 mx-auto" id="right-sidebar-arrow-img" src="./images/double-left-arrowhead.svg"/>
+            </button>
+            <!--Observation log Form-->
+            <div class="fixed top-0 right-0  w-96 hidden text-white p-2 " id="right-sidebar-content">
+                <div class="">
+                    <h2 class="text-center text-white">Form</h2>
+                    <div class="bg-white px-2 py-3 rounded">
+                        <div class="mb-4">
+                            <label class="block text-black font-bold" for="date-input">Date</label>
+                            <p class="text-black mb-2">The date on the chart that this observation is made at.</p>
+                            <input
+                                    class="shadow appearance-none border rounded w-full py-2 px-4 text-black leading-tight focus:outline-none focus:shadow-outline"
+                                    id="date-input"
+                                    type="date"/>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-black font-bold" for="work-item-input">Work Item</label>
+                            <p class="text-black mb-2">The work item (e.g. Jira issue or Zendesk ticket) that this
+                                observation is about.</p>
+                            <input
+                                    class="shadow appearance-none border rounded w-full py-2 px-4 text-black leading-tight focus:outline-none focus:shadow-outline"
+                                    id="work-item-input"
+                                    type="text"/>
+                        </div>
+                        <div class="mb-2">
+                            <label class="block text-black font-bold" for="observation-input">Observation</label>
+                            <p class="text-black mb-2">
+                                Focus on the observation - what happened at this particular point in the chart? Don't
+                                over-complicate your
+                                observations.You can draw insights and learnings from your observations at a later point
+                            </p>
+                            <textarea
+                                    class="shadow appearance-none border rounded w-full py-2 px-4 text-black leading-tight focus:outline-none focus:shadow-outline"
+                                    id="observation-input"
+                                    placeholder="Enter observation"
+                                    rows="10"></textarea>
+                        </div>
+                        <input id="service-id-input" name="service-id" type="hidden"/>
+                        <input id="chart-type-input" name="chart-type" type="hidden"/>
+                        <input id="observation-id-input" name="observation-id" type="hidden"/>
+                        <button
+                                class="bg-black text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                id="form-button"
+                                type="button">
+                            Submit
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="h-full ml-8 -z-10" id="page-content">
+            <div class="mx-auto mt-6">
+                <h1 class="my-2 text-center font-bold">CFD</h1>
+                <div id="cfd-area-div"></div>
+                <div id="cfd-brush-div"></div>
+                <h1 class="my-2 text-center font-bold">Scatterplot</h1>
+                <div id="scatterplot-area-div"></div>
+                <div id="scatterplot-brush-div"></div>
+                <h1 class="my-2 text-center font-bold">Histogram</h1>
+                <div id="histogram-area-div"></div>
+            </div>
+        </div>
+    </div>
 </div>
+<script src="../dist/graphs-renderer.js" type="module"></script>
+<script src="sidebars.js" type="module"></script>
 <script src="exampleData.js" type="module"></script>
 <script src="example.js" type="module"></script>
 </body>
