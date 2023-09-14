@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "A library for rendering the graphs: CFD, Scatterplot and Histogram with d3.js",
   "main": "./src/index.js",
+  "type": "module",
   "scripts": {
-    "postinstall": "webpack --config webpack.config.js",
+    "postinstall": "webpack --config webpack.config.cjs",
     "lint": "eslint 'src/**/*.{js,jsx}' --max-warnings=0",
     "lint:fix": "eslint 'src/**/*.{js,jsx}' --fix",
     "prettier": "prettier 'src/**/*.{js,jsx,json,css}' --check",
@@ -23,9 +24,11 @@
     "webpack-cli": "^5.1.4"
   },
   "devDependencies": {
+    "css-loader": "^6.8.1",
     "eslint": "^8.44.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-prettier": "^4.2.1",
-    "prettier": "^3.0.0"
+    "prettier": "^3.0.0",
+    "style-loader": "^3.3.3"
   }
 }

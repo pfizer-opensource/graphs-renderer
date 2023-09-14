@@ -1,4 +1,4 @@
-export default class EventBus {
+class EventBus {
   constructor() {
     this.eventTopics = {};
   }
@@ -15,3 +15,4 @@ export default class EventBus {
     this.eventTopics[eventName].forEach((listener) => listener(params ? params : {}));
   }
 }
+export const eventBus = new EventBus();

@@ -1,5 +1,7 @@
 import { getNoOfDaysBetweenDates, addDaysToDate } from '../../utils/utils.js';
 import UIControlsRenderer from '../UIControlsRenderer.js';
+import styles from '../tooltipStyles.module.css';
+
 import * as d3 from 'd3';
 
 /**
@@ -7,7 +9,8 @@ import * as d3 from 'd3';
  */
 class ScatterplotRenderer extends UIControlsRenderer {
   #color = '#0ea5e9';
-  ticketUrlBase = '';
+  currentXScale;
+  currentYScale;
 
   /**
    * Creates a ScatterplotRenderer instance
@@ -28,14 +31,67 @@ class ScatterplotRenderer extends UIControlsRenderer {
    *   }
    * ];
    */
-  constructor(data, ticketUrlBase) {
+  constructor(data) {
     super(data);
-    this.ticketUrlBase = ticketUrlBase;
+    console.table(data);
   }
 
   useEventBus(eventBus) {
     this.eventBus = eventBus;
     this.eventBus?.addEventListener('change-time-range-cfd', this.updateBrush.bind(this));
+  }
+
+  useObservationLogging(observations, workTicketsURL) {
+    if (observations) {
+      this.scatterplotTooltip = d3.select('body').append('div').attr('class', styles.tooltip).attr('id', 's-tooltip').style('opacity', 0);
+      d3.select(this.svg.node().parentNode).on('mouseleave', (event) => {
+        if (event.relatedTarget !== this.scatterplotTooltip.node()) {
+          this.hideTooltip();
+        }
+      });
+      this.workTicketsURL = workTicketsURL;
+      this.markObservations(observations);
+    }
+  }
+
+  markObservations(observations) {
+    if (observations) {
+      this.observations = observations;
+      this.chartArea.selectAll('.ring').remove();
+      this.chartArea
+        .selectAll('ring')
+        .data(this.data.filter((d) => this.observations.data.rows.some((o) => o.work_item === d.ticketId)))
+        .enter()
+        .append('circle')
+        .attr('class', 'ring')
+        .attr('cx', (d) => this.currentXScale(d.delivered))
+        .attr('cy', (d) => this.currentYScale(d.noOfDays))
+        .attr('r', 8)
+        .attr('fill', 'none')
+        .attr('stroke', 'black')
+        .attr('stroke-width', '2px');
+    }
+  }
+
+  hideTooltip() {
+    this.scatterplotTooltip.transition().duration(100).style('opacity', 0).style('pointer-events', 'none');
+  }
+
+  showTooltip(event) {
+    this.scatterplotTooltip.selectAll('*').remove();
+    this.scatterplotTooltip.transition().duration(100).style('opacity', 0.9).style('pointer-events', 'auto');
+    this.scatterplotTooltip
+      .style('left', event.tooltipLeft + 'px')
+      .style('top', event.tooltipTop + 'px')
+      .style('pointer-events', 'auto')
+      .style('opacity', 0.9)
+      .append('a')
+      .style('text-decoration', 'underline')
+      .attr('href', `${this.workTicketsURL}/${event.ticketId}`)
+      .attr('href', `#`)
+      .text(event.ticketId)
+      .attr('target', '_blank');
+    event.observationBody && this.scatterplotTooltip.append('p').text('Observation: ' + event.observationBody);
   }
 
   getReportingDomain(noOfDays) {
@@ -136,21 +192,21 @@ class ScatterplotRenderer extends UIControlsRenderer {
   }
 
   updateChart(domain) {
-    //get max y value before max focus date
     const maxY = d3.max(this.data, (d) => (d.delivered <= domain[1] && d.delivered >= domain[0] ? d.noOfDays : -1));
     this.setReportingRangeDays(getNoOfDaysBetweenDates(domain[0], domain[1]));
-    const focusX = this.x.copy().domain(domain);
-    const focusY = this.y.copy().domain([0, maxY]).nice();
+    this.currentXScale = this.x.copy().domain(domain);
+    this.currentYScale = this.y.copy().domain([0, maxY]).nice();
     const focusData = this.data.filter((d) => d.delivered <= domain[1] && d.delivered >= domain[0]);
-    this.drawXAxis(this.gx, focusX, this.rangeIncrementUnits, this.height);
-    this.drawYAxis(this.gy, focusY);
+    this.drawXAxis(this.gx, this.currentXScale, this.rangeIncrementUnits, this.height);
+    this.drawYAxis(this.gy, this.currentYScale);
 
     this.chartArea
       .selectAll('.dot')
-      .attr('cx', (d) => focusX(d.delivered))
-      .attr('cy', (d) => focusY(d.noOfDays))
+      .attr('cx', (d) => this.currentXScale(d.delivered))
+      .attr('cy', (d) => this.currentYScale(d.noOfDays))
       .attr('fill', this.#color);
-    this.#drawPercentileLines(this.svg, focusData, focusY);
+    this.#drawPercentileLines(this.svg, focusData, this.currentYScale);
+    this.markObservations(this.observations);
   }
 
   drawXAxis(g, x, rangeIncrementUnits, height = this.height) {
@@ -188,47 +244,39 @@ class ScatterplotRenderer extends UIControlsRenderer {
   }
 
   #drawScatterPlot(chartArea, data, x, y) {
-    const tooltip = d3
-      .select('body')
-      .append('a')
-      .attr('class', 'tooltip')
-      .style('position', 'absolute')
-      .style('padding', '8px')
-      .style('font-size', '14px')
-      .style('background-color', 'lightsteelblue')
-      .style('text-decoration', 'underline')
-      .style('border-radius', '8px')
-      .style('z-index', '1')
-      .style('cursor', 'pointer')
-      .attr('target', '_blank');
-
     chartArea
       .selectAll('dot')
       .data(data)
       .enter()
       .append('circle')
       .attr('class', 'dot')
+      .attr('id', (d) => d.ticketId)
+      .attr('data-date', (d) => d.delivered)
       .attr('r', 5)
       .attr('cx', (d) => x(d.delivered))
       .attr('cy', (d) => y(d.noOfDays))
       .style('cursor', 'pointer')
       .attr('fill', this.#color)
-      .on('click', function (event, d) {
-        tooltip.transition().duration(200).style('opacity', 0.9).style('pointer-events', 'auto');
-        tooltip
-          .html(d.ticketId)
-          .attr('href', `${this.ticketUrlBase}/${d.ticketId}`)
-          .style('left', event.pageX + 'px')
-          .style('top', event.pageY + 'px');
+      .on('click', (event, d) => {
+        if (this.observations) {
+          const observation = this.observations.data.rows.find((o) => o.work_item === d.ticketId);
+          const data = {
+            date: d.delivered,
+            ticketId: d.ticketId,
+            tooltipLeft: event.pageX,
+            tooltipTop: event.pageY,
+            observationBody: observation?.body,
+            observationId: observation?.id,
+          };
+          this.showTooltip(data);
+          this.eventBus?.emitEvents('scatterplot-click', data);
+        }
       });
-    tooltip.on('mouseout', () => {
-      tooltip.transition().duration(500).style('opacity', 0).style('pointer-events', 'none');
-    });
   }
 
   #computePercentileLine(data, percent) {
     const percentileIndex = Math.floor(data.length * percent);
-    return data[percentileIndex].noOfDays;
+    return data[percentileIndex]?.noOfDays;
   }
 
   #drawPercentileLines(svg, data, y) {
@@ -238,10 +286,10 @@ class ScatterplotRenderer extends UIControlsRenderer {
     const percentile3 = this.#computePercentileLine(dataSortedByNoOfDays, 0.85);
     const percentile4 = this.#computePercentileLine(dataSortedByNoOfDays, 0.95);
 
-    this.#drawPercentileLine(svg, y, percentile1, '50%', 'p1');
-    this.#drawPercentileLine(svg, y, percentile2, '70%', 'p2');
-    this.#drawPercentileLine(svg, y, percentile3, '85%', 'p3');
-    this.#drawPercentileLine(svg, y, percentile4, '95%', 'p4');
+    percentile1 && this.#drawPercentileLine(svg, y, percentile1, '50%', 'p1');
+    percentile2 && this.#drawPercentileLine(svg, y, percentile2, '70%', 'p2');
+    percentile3 && this.#drawPercentileLine(svg, y, percentile3, '85%', 'p3');
+    percentile4 && this.#drawPercentileLine(svg, y, percentile4, '95%', 'p4');
   }
 
   #drawPercentileLine(svg, y, percentile, text, percentileId) {

@@ -1,0 +1,19 @@
+.tooltip {
+  position: absolute;
+  text-align: center;
+  width: max-content;
+  height: max-content;
+  padding: 8px;
+  font: 14px sans-serif;
+  background: lightsteelblue;
+  border: 0;
+  border-radius: 8px;
+  z-index: 1;
+}
+
+.tooltip p {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}

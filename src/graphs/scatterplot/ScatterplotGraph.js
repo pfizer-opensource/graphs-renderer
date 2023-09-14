@@ -26,7 +26,7 @@ class ScatterplotGraph {
    *     "analysis_done": "timestamp",
    *     "delivered": "timestamp",
    *     "dev_complete": "timestamp",
-   *     "github_repo": "github_repo_name",
+   *     "github_repo": "github_repo",
    *     "in_progress": "timestamp",
    *     "indexes": [],
    *     "tags": [],
@@ -62,8 +62,10 @@ class ScatterplotGraph {
     const dataSet = [];
     this.data.forEach((ticket) => {
       if (ticket.delivered) {
+        const deliveredDate = new Date(ticket.delivered * 1000);
+        deliveredDate.setHours(0, 0, 0, 0);
         const scatterplotTicket = {
-          delivered: new Date(ticket.delivered * 1000),
+          delivered: deliveredDate,
           noOfDays: 0,
           ticketId: ticket.work_id,
         };
