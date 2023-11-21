@@ -1,3 +1,5 @@
+import { calculateDaysBetweenDates } from '../../utils/utils.js';
+
 /**
  * Class representing a Scatterplot Graph Data
  */
@@ -59,31 +61,20 @@ class ScatterplotGraph {
    * ];
    */
   computeDataSet() {
-    const dataSet = [];
-    this.data.forEach((ticket) => {
-      if (ticket.delivered) {
+    return this.data
+      .filter((ticket) => ticket.delivered)
+      .map((ticket) => {
         const deliveredDate = new Date(ticket.delivered * 1000);
+        const startDate = ticket.analysis_active || ticket.analysis_done;
+        const noOfDays = startDate ? calculateDaysBetweenDates(startDate, ticket.delivered) : 0;
         deliveredDate.setHours(0, 0, 0, 0);
-        const scatterplotTicket = {
+        return {
           delivered: deliveredDate,
-          noOfDays: 0,
+          noOfDays: noOfDays,
           ticketId: ticket.work_id,
         };
-        if (ticket.analysis_active || ticket.analysis_done) {
-          scatterplotTicket.noOfDays = this.#getNoOfDeliveryDays(ticket.analysis_active || ticket.analysis_done, ticket.delivered);
-        }
-        dataSet.push(scatterplotTicket);
-      }
-    });
-    dataSet.sort((t1, t2) => t1.delivered - t2.delivered);
-    return dataSet;
-  }
-
-  #getNoOfDeliveryDays(startTimestamp, deliveredTimestamp) {
-    const oneDayInSeconds = 60 * 60 * 24;
-    const diffTimeInSeconds = deliveredTimestamp - startTimestamp;
-    const noOfDays = Math.floor(diffTimeInSeconds / oneDayInSeconds);
-    return noOfDays;
+      })
+      .sort((t1, t2) => t1.delivered - t2.delivered);
   }
 }
 

@@ -23,8 +23,11 @@ export function addDaysToDate(date, noOfDays) {
   return new Date(date.getTime() + noOfDays * (1000 * 3600 * 24));
 }
 
-export function getNoOfDaysBetweenDates(startDate, finalDate) {
-  return (finalDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24);
+export function calculateDaysBetweenDates(startDate, endDate, roundDown = true) {
+  const startMillis = startDate instanceof Date ? startDate.getTime() : startDate * 1000;
+  const endMillis = endDate instanceof Date ? endDate.getTime() : endDate * 1000;
+  const diffDays = (endMillis - startMillis) / (1000 * 3600 * 24);
+  return roundDown ? Math.floor(diffDays) : diffDays;
 }
 
 export function areDatesEqual(date1, date2) {

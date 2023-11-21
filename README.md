@@ -36,12 +36,12 @@ import { CFDGraph, CFDRenderer } from 'graphs-renderer';
 
 ```javascript
     let data = [...]
-    let cfdSelector = "#cfd";
-    let cfdGraph = new CFDGraph(data)
-    let cfdDataSet = cfdGraph.computeDataSet();
-    let cfdRenderer = new CFDRenderer(cfdDataSet)
-    cfdRenderer.drawGraph(cfdSelector)
-    cfdRenderer.useBrush("#cfd-brush")
+let cfdSelector = "#cfd";
+let cfdGraph = new CFDGraph(data)
+let cfdDataSet = cfdGraph.computeDataSet();
+let cfdRenderer = new CFDRenderer(cfdDataSet)
+cfdRenderer.renderGraph(cfdSelector)
+cfdRenderer.setupBrush("#cfd-brush")
 ```
 
 To see usage examples of the library and the data format for the graph refer to [Examples](#examples)
