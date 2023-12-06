@@ -35,60 +35,36 @@ class HistogramRenderer extends Renderer {
   constructor(data, eventBus) {
     super(data);
     this.eventBus = eventBus;
-    this.eventBus?.addEventListener('change-time-range-scatterplot', (timeRange) => {
-      const currentSelectionData = this.data.filter((d) => d.delivered >= timeRange[0] && d.delivered <= timeRange[1]);
-      this.#setXScale(currentSelectionData);
-      this.#binnedData = this.#computeBinnedData(this.x, currentSelectionData);
-      this.#setYScale(this.#binnedData);
-      this.updateChart(currentSelectionData);
-    });
+    this.eventBus?.addEventListener('change-time-range-scatterplot', this.#handleTimeRangeChange.bind(this));
   }
 
-  #setYScale(data) {
-    const maxValue = d3.max(data, this.#yAccessor);
-    const padding = maxValue * 0.08; // 10% padding
-    const yDomain = [0, maxValue + padding];
-    this.y = this.computeLinearScale(yDomain, [this.height, 0]).nice();
-  }
+  //region Graph and brush rendering
 
-  #setXScale(data) {
-    const xDomain = [0, d3.max(data, this.#xAccessor)];
-    this.x = this.computeLinearScale(xDomain, [0, this.width]).nice();
-  }
-
-  drawGraph(graphElementSelector) {
+  /**
+   * Renders the histogram graph in the specified DOM element.
+   * @param {string} graphElementSelector - Selector of the DOM element to render the graph.
+   */
+  renderGraph(graphElementSelector) {
     this.#drawSvg(graphElementSelector);
-    this.#drawAxis();
+    this.#drawAxes();
     this.#drawArea();
   }
 
+  /**
+   * Clears the histogram graph from the specified DOM element.
+   * @param {string} graphElementSelector - Selector of the DOM element to clear.
+   */
   clearGraph(graphElementSelector) {
     this.#drawSvg(graphElementSelector);
-    this.#drawAxis();
+    this.#drawAxes();
   }
 
-  #drawSvg(graphElementSelector) {
-    this.svg = this.createSvg(graphElementSelector);
-  }
-
-  #drawAxis() {
-    this.#setXScale(this.data);
-    this.#binnedData = this.#computeBinnedData(this.x, this.data);
-    this.#setYScale(this.#binnedData);
-    this.gx = this.svg.append('g');
-    this.gy = this.svg.append('g');
-    this.drawXAxis(this.gx, this.x);
-    this.drawYAxis(this.gy, this.y);
-  }
-
-  #drawArea() {
-    this.chartArea = this.addClipPath(this.svg, 'histogram-clip');
-    this.#drawHistogram(this.chartArea, this.#binnedData, this.x, this.y);
-    this.#drawPercentileLines(this.svg, this.data, this.x);
-    this.drawAxisLabels(this.svg, '# of delivery days', '# of tickets');
-  }
-
-  updateChart(focusData) {
+  /**
+   * Updates the histogram chart based on the new X-axis domain.
+   * It draws again the axis, the bars and the labels based on the new data.
+   * @param {Array} domain - The new X-axis domain.
+   */
+  updateGraph(domain) {
     this.drawXAxis(this.gx, this.x);
     this.drawYAxis(this.gy, this.y);
 
@@ -121,14 +97,49 @@ class HistogramRenderer extends Renderer {
       .attr('y', (d) => this.y(this.#yAccessor(d)))
       .attr('font-size', 8)
       .text(this.#yAccessor);
-    this.#drawPercentileLines(this.svg, focusData, this.x);
+    this.#drawPercentileLines(this.svg, domain, this.x);
   }
 
+  /**
+   * Draws the SVG container for the histogram.
+   * @param {string} graphElementSelector - The DOM selector where the SVG is to be appended.
+   * @private
+   */
+  #drawSvg(graphElementSelector) {
+    this.svg = this.createSvg(graphElementSelector);
+  }
+
+  /**
+   * Draws the main area of the histogram, including percentile lines and labels.
+   * @private
+   */
+  #drawArea() {
+    this.chartArea = this.addClipPath(this.svg, 'histogram-clip');
+    this.#drawHistogram(this.chartArea, this.#binnedData, this.x, this.y);
+    this.#drawPercentileLines(this.svg, this.data, this.x);
+    this.drawAxisLabels(this.svg, '# of delivery days', '# of tickets');
+  }
+
+  /**
+   * Computes binned data for the histogram bars.
+   * @private
+   * @param {d3.Scale} x - The X-axis scale.
+   * @param {Array} data - The data to be binned.
+   * @returns {Array} The binned data.
+   */
   #computeBinnedData(x, data) {
     const bins = d3.bin().domain(x.domain()).value(this.#xAccessor).thresholds(this.#noOfBins);
     return bins(data);
   }
 
+  /**
+   * Draws the histogram bars and labels.
+   * @private
+   * @param {d3.Selection} svg - The SVG selection to draw the histogram.
+   * @param {Array} data - The binned data for the histogram.
+   * @param {d3.Scale} x - The X-axis scale.
+   * @param {d3.Scale} y - The Y-axis scale.
+   */
   #drawHistogram(svg, data, x, y) {
     svg
       .selectAll('rect')
@@ -152,11 +163,70 @@ class HistogramRenderer extends Renderer {
       .text(this.#yAccessor);
   }
 
-  #computePercentileLine(data, percent) {
-    const percentileIndex = Math.floor(data.length * percent);
-    return data[percentileIndex]?.noOfDays;
+  /**
+   * Updates the chart and the axis based on the new time range that comes from the event bus.
+   * @param {Array} timeRange - Selected time range.
+   * @private
+   */
+  #handleTimeRangeChange(timeRange) {
+    const currentSelectionData = this.data.filter((d) => d.delivered >= timeRange[0] && d.delivered <= timeRange[1]);
+    this.#setXScale(currentSelectionData);
+    this.#binnedData = this.#computeBinnedData(this.x, currentSelectionData);
+    this.#setYScale(this.#binnedData);
+    this.updateGraph(currentSelectionData);
   }
 
+  //endregion
+
+  //region Axes
+
+  /**
+   * Draws both the X and Y axes for the histogram.
+   * @private
+   */
+  #drawAxes() {
+    this.#setXScale(this.data);
+    this.#binnedData = this.#computeBinnedData(this.x, this.data);
+    this.#setYScale(this.#binnedData);
+    this.gx = this.svg.append('g');
+    this.gy = this.svg.append('g');
+    this.drawXAxis(this.gx, this.x);
+    this.drawYAxis(this.gy, this.y);
+  }
+
+  /**
+   * Sets the Y-scale for the histogram based on the data.
+   * @param {Array} data - Data to set the Y-scale.
+   * @private
+   */
+  #setYScale(data) {
+    const maxValue = d3.max(data, this.#yAccessor);
+    const padding = maxValue * 0.08; // 10% padding
+    const yDomain = [0, maxValue + padding];
+    this.y = this.computeLinearScale(yDomain, [this.height, 0]).nice();
+  }
+
+  /**
+   * Sets the X-scale for the histogram based on the data.
+   * @param {Array} data - Data to set the X-scale.
+   * @private
+   */
+  #setXScale(data) {
+    const xDomain = [0, d3.max(data, this.#xAccessor)];
+    this.x = this.computeLinearScale(xDomain, [0, this.width]).nice();
+  }
+
+  //endregion
+
+  //region Percentile lines rendering
+
+  /**
+   * Draws percentile lines on the histogram.
+   * @private
+   * @param {d3.Selection} svg - The SVG selection to draw the lines.
+   * @param {Array} data - The array of data points.
+   * @param {d3.Scale} x - The X-axis scale.
+   */
   #drawPercentileLines(svg, data, x) {
     const dataSortedByNoOfDays = [...data].sort((a, b) => a.noOfDays - b.noOfDays);
     const percentile1 = this.#computePercentileLine(dataSortedByNoOfDays, 0.5);
@@ -169,6 +239,27 @@ class HistogramRenderer extends Renderer {
     percentile4 && this.#drawPercentileLine(svg, x, percentile4, '95%', 'p4');
   }
 
+  /**
+   * Computes the value at a specified percentile in the data.
+   * @private
+   * @param {Array} data - The array of data points.
+   * @param {number} percent - The percentile to compute (between 0 and 1).
+   * @returns {number} The value at the specified percentile.
+   */
+  #computePercentileLine(data, percent) {
+    const percentileIndex = Math.floor(data.length * percent);
+    return data[percentileIndex]?.noOfDays;
+  }
+
+  /**
+   * Draws a single percentile line on the histogram.
+   * @private
+   * @param {d3.Selection} svg - The SVG selection to draw the line.
+   * @param {d3.Scale} x - The X-axis scale.
+   * @param {number} percentile - The percentile value.
+   * @param {string} text - The text label for the percentile line.
+   * @param {string} percentileId - The unique identifier for the percentile line.
+   */
   #drawPercentileLine(svg, x, percentile, text, percentileId) {
     const percentileTextEl = document.getElementById(`x-text-${percentileId}`);
     if (percentileTextEl) {
@@ -200,6 +291,8 @@ class HistogramRenderer extends Renderer {
         .attr('y2', this.height);
     }
   }
+
+  //endregion
 }
 
 export default HistogramRenderer;

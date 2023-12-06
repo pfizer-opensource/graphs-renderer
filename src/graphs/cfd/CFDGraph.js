@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+
 /**
  * Class representing a Cumulative Flow Diagram (CFD) Graph Data
  */
@@ -36,8 +37,9 @@ class CFDGraph {
    *   }
    * ];
    */
-  constructor(data) {
+  constructor(data, states) {
     this.data = data;
+    this.states = states;
   }
 
   /**
@@ -69,97 +71,60 @@ class CFDGraph {
    */
   computeDataSet() {
     const dataSet = [];
-    //Get the min and max dates from the dataSet set
-    const minDate = d3.min(this.data, (d) => d.delivered);
-    const maxDate = d3.max(this.data, (d) => d.delivered);
-    for (let i = new Date(minDate * 1000); i < new Date(maxDate * 1000); i.setDate(i.getDate() + 1)) {
-      const currentDate = new Date(i);
+    const minDate = new Date(d3.min(this.data, (d) => d.delivered) * 1000);
+    const maxDate = new Date(d3.max(this.data, (d) => d.delivered) * 1000);
+    minDate.setHours(0, 0, 0, 0);
+    maxDate.setHours(0, 0, 0, 0);
+    for (let date = minDate; date <= maxDate; date.setDate(date.getDate() + 1)) {
+      const currentDate = new Date(date);
       currentDate.setHours(0, 0, 0, 0);
+      const currentTimestamp = currentDate.getTime() / 1000;
       dataSet.push({
         date: currentDate,
-        delivered: this.#getNoOfTicketsInDeliveredState(currentDate.getTime() / 1000),
-        verif_start: this.#getNoOfTicketsInVerificationStartState(currentDate.getTime() / 1000),
-        dev_complete: this.#getNoOfTicketsInDevCompleteState(currentDate.getTime() / 1000),
-        in_progress: this.#getNoOfTicketsInProgressState(currentDate.getTime() / 1000),
-        analysis_done: this.#getNoOfTicketsInAnalysisDoneState(currentDate.getTime() / 1000),
-        analysis_active: this.#getNoOfTicketsInAnalysisActiveState(currentDate.getTime() / 1000),
+        delivered: this.#getNoOfTicketsInState(this.states[5], currentTimestamp),
+        verif_start: this.#getNoOfTicketsInState(this.states[4], currentTimestamp),
+        dev_complete: this.#getNoOfTicketsInState(this.states[3], currentTimestamp),
+        in_progress: this.#getNoOfTicketsInState(this.states[2], currentTimestamp),
+        analysis_done: this.#getNoOfTicketsInState(this.states[1], currentTimestamp),
+        analysis_active: this.#getNoOfTicketsInState(this.states[0], currentTimestamp),
       });
-    }
-    if (dataSet.length > 0) {
-      const currentDate = new Date(maxDate * 1000);
-      currentDate.setHours(0, 0, 0, 0);
-      dataSet[dataSet.length - 1].date = currentDate;
     }
     return dataSet;
   }
 
-  #getNoOfTicketsInAnalysisActiveState(ticketTimestamp) {
+  /**
+   * Calculates the number of tickets in a specific state at a given timestamp.
+   * A ticket counts as being in the state if its timestamp for that state is before the given timestamp.
+   * If the state is the last in the sequence or the next state is undefined, only this condition needs to be met.
+   * Otherwise, the ticket's timestamp for the next state must be after the given timestamp.
+   *
+   * @param {string} state - The current state to check in the ticket.
+   * @param {number} timestamp - The timestamp at which to check the ticket state.
+   * @returns {number} noOfTickets - The count of tickets in the specified state for the given timestamp.
+   */
+  #getNoOfTicketsInState(state, timestamp) {
     return this.data.filter((d) => {
-      if (!d.analysis_active) {
+      if (!d[state]) {
         return false;
       }
-      if (!d.analysis_done && ticketTimestamp >= d.analysis_active) {
-        return true;
+      const nextState = this.#getNextState(state);
+      if (!nextState) {
+        return d[state] <= timestamp;
       }
-      return ticketTimestamp >= d.analysis_active && ticketTimestamp < d.analysis_done;
+      return d[state] <= timestamp && d[nextState] > timestamp;
     }).length;
   }
 
-  #getNoOfTicketsInAnalysisDoneState(ticketTimestamp) {
-    return this.data.filter((d) => {
-      if (!d.analysis_done) {
-        return false;
-      }
-      if (!d.in_progress && ticketTimestamp >= d.analysis_done) {
-        return true;
-      }
-      return ticketTimestamp >= d.analysis_done && ticketTimestamp < d.in_progress;
-    }).length;
-  }
-
-  #getNoOfTicketsInProgressState(ticketTimestamp) {
-    return this.data.filter((d) => {
-      if (!d.in_progress) {
-        return false;
-      }
-      if (!d.dev_complete && ticketTimestamp >= d.in_progress) {
-        return true;
-      }
-      return ticketTimestamp >= d.in_progress && ticketTimestamp < d.dev_complete;
-    }).length;
-  }
-
-  #getNoOfTicketsInDevCompleteState(ticketTimestamp) {
-    return this.data.filter((d) => {
-      if (!d.dev_complete) {
-        return false;
-      }
-      if (!d.verification_start && ticketTimestamp >= d.dev_complete) {
-        return true;
-      }
-      return ticketTimestamp >= d.dev_complete && ticketTimestamp < d.verification_start;
-    }).length;
-  }
-
-  #getNoOfTicketsInVerificationStartState(ticketTimestamp) {
-    return this.data.filter((d) => {
-      if (!d.verification_start) {
-        return false;
-      }
-      if (!d.delivered && ticketTimestamp >= d.verification_start) {
-        return true;
-      }
-      return ticketTimestamp >= d.verification_start && ticketTimestamp < d.delivered;
-    }).length;
-  }
-
-  #getNoOfTicketsInDeliveredState(ticketTimestamp) {
-    return this.data.filter((d) => {
-      if (!d.delivered) {
-        return false;
-      }
-      return ticketTimestamp >= d.delivered;
-    }).length;
+  /**
+   * Gets the next state in the ticket lifecycle based on the current state.
+   * Returns null if the current state is the last one in the lifecycle.
+   *
+   * @param {string} state - The current state of the ticket.
+   * @returns {string|null} nextState - The next state in the ticket lifecycle, or null if there is no next state.
+   */
+  #getNextState(state) {
+    const index = this.states.indexOf(state);
+    return index >= 0 && index < this.states.length - 1 ? this.states[index + 1] : null;
   }
 }
 

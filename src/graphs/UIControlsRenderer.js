@@ -1,63 +1,99 @@
 import { readJsonFile } from '../utils/utils.js';
 import Renderer from './Renderer.js';
 
+/**
+ * Extends Renderer to manage UI controls the graphs
+ */
 export default class UIControlsRenderer extends Renderer {
-  currentSelectionDomain;
-  defaultSelectionDomain;
+  selectedTimeRange;
+  defaultTimeRange;
   #defaultReportingRangeDays = 90;
-  #defaultRangeIncrementUnits = 'weeks';
+  #defaultTimeInterval = 'weeks';
   reportingRangeDays = this.#defaultReportingRangeDays;
-  rangeIncrementUnits = this.#defaultRangeIncrementUnits;
-  gBrush;
+  timeInterval = this.#defaultTimeInterval;
+  brushGroup;
   brush;
-  isUserBrushEvent = true;
+  isManualBrushUpdate = true;
 
   constructor(data) {
     super(data);
     this.reportingRangeDays = localStorage.getItem('reportingRangeDays') || this.reportingRangeDays;
-    this.rangeIncrementUnits = localStorage.getItem('rangeIncrementUnits') || this.rangeIncrementUnits;
+    this.timeInterval = localStorage.getItem('rangeIncrementUnits') || this.timeInterval;
   }
 
-  useBrush(brushElementSelector) {
+  /**
+   * Sets up a brush control for time range selection.
+   * @param {string} brushElementSelector - The DOM selector for the brush element.
+   */
+  setupBrush(brushElementSelector) {
     this.brushSelector = brushElementSelector;
-    this.defaultSelectionDomain = this.getReportingDomain(this.reportingRangeDays);
-    this.currentSelectionDomain ||= Array.from(this.defaultSelectionDomain);
-    this.drawBrush();
+    this.defaultTimeRange = this.computeReportingRange(this.reportingRangeDays);
+    this.selectedTimeRange ||= Array.from(this.defaultTimeRange);
+    this.renderBrush();
   }
 
-  updateBrush(newSelectionDomain) {
-    if (newSelectionDomain) {
-      this.isUserBrushEvent = false;
-      this.currentSelectionDomain = newSelectionDomain;
-      this.gBrush?.call(this.brush)?.call(
+  /**
+   * Updates the brush selection with a new time range.
+   * @param {Array} newTimeRange - The new time range for the brush.
+   */
+  updateBrushSelection(newTimeRange) {
+    if (newTimeRange) {
+      this.isManualBrushUpdate = false;
+      this.selectedTimeRange = newTimeRange;
+      this.brushGroup?.call(this.brush)?.call(
         this.brush.move,
-        newSelectionDomain?.map((d) => this.x(d))
+        newTimeRange?.map((d) => this.x(d))
       );
     }
   }
 
-  useControls(reportingRangeDaysSelector, rangeIncrementUnits) {
-    this.reportingRangeDaysElement = document.querySelector(reportingRangeDaysSelector);
-    this.reportingRangeDaysElement.value = this.reportingRangeDays;
-    this.currentSelectionDomain ||= this.getReportingDomain(this.reportingRangeDays);
-    this.reportingRangeDaysElement.addEventListener('keypress', (event) => {
-      if (event.key === 'Enter') {
-        this.reportingRangeDays = event.target.value;
-        this.currentSelectionDomain = this.getReportingDomain(this.reportingRangeDays);
-        this.brushSelector ? this.drawBrush() : this.updateChart(this.currentSelectionDomain);
-      }
-    });
-
-    this.rangeIncrementUnitsElement = document.querySelector(rangeIncrementUnits);
-    this.rangeIncrementUnitsElement.value = this.rangeIncrementUnits;
-    this.rangeIncrementUnitsElement.addEventListener('change', (event) => {
-      this.rangeIncrementUnits = event.target.value;
-      this.drawXAxis(this.gx, this.x.copy().domain(this.currentSelectionDomain), this.rangeIncrementUnits);
-    });
-    this.brushSelector ? this.drawBrush() : this.updateChart(this.currentSelectionDomain);
+  /**
+   * Sets up controls for selecting reporting range days and time intervals.
+   * @param {string} reportingRangeDaysSelector - DOM selector for reporting range days input.
+   * @param {string} timeIntervalSelector - DOM selector for time interval selection.
+   */
+  setupChartControls(reportingRangeDaysSelector, timeIntervalSelector) {
+    this.setupReportingRangeDays(reportingRangeDaysSelector);
+    this.setupTimeInterval(timeIntervalSelector);
+    this.brushSelector ? this.renderBrush() : this.updateGraph(this.selectedTimeRange);
   }
 
-  useConfigLoading(loadConfigInputSelector, resetConfigInputSelector) {
+  /**
+   * Sets up the input control for selecting reporting range days.
+   * @param {string} reportingRangeDaysSelector - DOM selector for reporting range days input.
+   */
+  setupReportingRangeDays(reportingRangeDaysSelector) {
+    this.reportingRangeDaysInput = document.querySelector(reportingRangeDaysSelector);
+    this.reportingRangeDaysInput.value = this.reportingRangeDays;
+    this.selectedTimeRange ||= this.computeReportingRange(this.reportingRangeDays);
+    this.reportingRangeDaysInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        this.reportingRangeDays = event.target.value;
+        this.selectedTimeRange = this.computeReportingRange(this.reportingRangeDays);
+        this.brushSelector ? this.renderBrush() : this.updateGraph(this.selectedTimeRange);
+      }
+    });
+  }
+
+  /**
+   * Sets up the selection control for time intervals.
+   * @param {string} timeIntervalSelector - DOM selector for time interval selection.
+   */
+  setupTimeInterval(timeIntervalSelector) {
+    this.rangeIncrementUnitsElement = document.querySelector(timeIntervalSelector);
+    this.rangeIncrementUnitsElement.value = this.timeInterval;
+    this.rangeIncrementUnitsElement.addEventListener('change', (event) => {
+      this.timeInterval = event.target.value;
+      this.drawXAxis(this.gx, this.x.copy().domain(this.selectedTimeRange), this.timeInterval);
+    });
+  }
+
+  /**
+   * Sets up the configuration loader and reset buttons.
+   * @param {string} loadConfigInputSelector - DOM selector for config load input.
+   * @param {string} resetConfigInputSelector - DOM selector for config reset input.
+   */
+  setupConfigLoader(loadConfigInputSelector, resetConfigInputSelector) {
     this.loadConfigButton = document.querySelector(loadConfigInputSelector);
     const fileChosenElement = document.querySelector('#config-file-chosen');
     this.loadConfigButton.addEventListener('change', async (event) => {
@@ -66,11 +102,11 @@ export default class UIControlsRenderer extends Renderer {
         const jsonConfig = await readJsonFile(file);
         fileChosenElement.textContent = file.name;
         this.reportingRangeDays = jsonConfig.reportingRangeDays || this.reportingRangeDays;
-        this.rangeIncrementUnits = jsonConfig.rangeIncrementUnits || this.rangeIncrementUnits;
+        this.timeInterval = jsonConfig.timeInterval || this.timeInterval;
         localStorage.setItem('reportingRangeDays', this.reportingRangeDays);
-        localStorage.setItem('rangeIncrementUnits', this.rangeIncrementUnits);
-        this.currentSelectionDomain = this.getReportingDomain(this.reportingRangeDays);
-        this.brushSelector ? this.drawBrush() : this.updateChart(this.currentSelectionDomain);
+        localStorage.setItem('rangeIncrementUnits', this.timeInterval);
+        this.selectedTimeRange = this.computeReportingRange(this.reportingRangeDays);
+        this.brushSelector ? this.renderBrush() : this.updateGraph(this.selectedTimeRange);
       } catch (err) {
         console.error(err);
         fileChosenElement.textContent = err;
@@ -81,28 +117,39 @@ export default class UIControlsRenderer extends Renderer {
       localStorage.removeItem('reportingRangeDays');
       localStorage.removeItem('rangeIncrementUnits');
       this.reportingRangeDays = this.#defaultReportingRangeDays;
-      this.rangeIncrementUnits = this.#defaultRangeIncrementUnits;
-      this.currentSelectionDomain = this.getReportingDomain(this.reportingRangeDays);
-      this.brushSelector ? this.drawBrush() : this.updateChart(this.currentSelectionDomain);
+      this.timeInterval = this.#defaultTimeInterval;
+      this.selectedTimeRange = this.computeReportingRange(this.reportingRangeDays);
+      this.brushSelector ? this.renderBrush() : this.updateGraph(this.selectedTimeRange);
     });
   }
 
+  /**
+   * Sets the reporting range days.
+   * @param {number} reportingRangeDays - Number of days for the reporting range.
+   */
   setReportingRangeDays(reportingRangeDays) {
     this.reportingRangeDays = reportingRangeDays;
-    if (this.reportingRangeDaysElement) {
-      this.reportingRangeDaysElement.value = Math.floor(this.reportingRangeDays);
+    if (this.reportingRangeDaysInput) {
+      this.reportingRangeDaysInput.value = Math.floor(this.reportingRangeDays);
     }
   }
 
-  setRangeIncrementUnits(rangeIncrementUnits) {
-    this.rangeIncrementUnits = rangeIncrementUnits;
+  /**
+   * Sets the time interval for the chart.
+   * @param {string} rangeIncrementUnits - Time interval units (days, weeks, months).
+   */
+  setTimeInterval(rangeIncrementUnits) {
+    this.timeInterval = rangeIncrementUnits;
     if (this.rangeIncrementUnitsElement) {
       const option = Array.from(this.rangeIncrementUnitsElement.options).find((o) => o.value === rangeIncrementUnits);
       option.selected = true;
     }
   }
 
-  drawBrush() {
-    throw new Error('Method not implemented!');
+  /**
+   * Abstract method to render the brush. Must be implemented in subclasses.
+   */
+  renderBrush() {
+    throw new Error('Method not implemented. It must be implemented in subclasses!');
   }
 }
