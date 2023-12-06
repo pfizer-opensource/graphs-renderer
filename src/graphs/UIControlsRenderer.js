@@ -1,5 +1,6 @@
-import { readJsonFile } from '../utils/utils.js';
+import { addDaysToDate, calculateDaysBetweenDates, readJsonFile } from '../utils/utils.js';
 import Renderer from './Renderer.js';
+import * as d3 from 'd3';
 
 /**
  * Extends Renderer to manage UI controls the graphs
@@ -18,7 +19,7 @@ export default class UIControlsRenderer extends Renderer {
   constructor(data) {
     super(data);
     this.reportingRangeDays = localStorage.getItem('reportingRangeDays') || this.reportingRangeDays;
-    this.timeInterval = localStorage.getItem('rangeIncrementUnits') || this.timeInterval;
+    this.timeInterval = localStorage.getItem('timeInterval') || this.timeInterval;
   }
 
   /**
@@ -80,11 +81,11 @@ export default class UIControlsRenderer extends Renderer {
    * @param {string} timeIntervalSelector - DOM selector for time interval selection.
    */
   setupTimeInterval(timeIntervalSelector) {
-    this.rangeIncrementUnitsElement = document.querySelector(timeIntervalSelector);
-    this.rangeIncrementUnitsElement.value = this.timeInterval;
-    this.rangeIncrementUnitsElement.addEventListener('change', (event) => {
+    this.timeIntervalElement = document.querySelector(timeIntervalSelector);
+    this.timeIntervalElement.value = this.timeInterval;
+    this.timeIntervalElement.addEventListener('change', (event) => {
       this.timeInterval = event.target.value;
-      this.drawXAxis(this.gx, this.x.copy().domain(this.selectedTimeRange), this.timeInterval);
+      this.drawXAxis(this.gx, this.x.copy().domain(this.selectedTimeRange), this.height, true);
     });
   }
 
@@ -104,7 +105,7 @@ export default class UIControlsRenderer extends Renderer {
         this.reportingRangeDays = jsonConfig.reportingRangeDays || this.reportingRangeDays;
         this.timeInterval = jsonConfig.timeInterval || this.timeInterval;
         localStorage.setItem('reportingRangeDays', this.reportingRangeDays);
-        localStorage.setItem('rangeIncrementUnits', this.timeInterval);
+        localStorage.setItem('timeInterval', this.timeInterval);
         this.selectedTimeRange = this.computeReportingRange(this.reportingRangeDays);
         this.brushSelector ? this.renderBrush() : this.updateGraph(this.selectedTimeRange);
       } catch (err) {
@@ -115,7 +116,7 @@ export default class UIControlsRenderer extends Renderer {
     this.resetConfigButton = document.querySelector(resetConfigInputSelector);
     this.resetConfigButton.addEventListener('click', () => {
       localStorage.removeItem('reportingRangeDays');
-      localStorage.removeItem('rangeIncrementUnits');
+      localStorage.removeItem('timeInterval');
       this.reportingRangeDays = this.#defaultReportingRangeDays;
       this.timeInterval = this.#defaultTimeInterval;
       this.selectedTimeRange = this.computeReportingRange(this.reportingRangeDays);
@@ -128,22 +129,119 @@ export default class UIControlsRenderer extends Renderer {
    * @param {number} reportingRangeDays - Number of days for the reporting range.
    */
   setReportingRangeDays(reportingRangeDays) {
-    this.reportingRangeDays = reportingRangeDays;
+    this.reportingRangeDays = Math.floor(reportingRangeDays);
     if (this.reportingRangeDaysInput) {
-      this.reportingRangeDaysInput.value = Math.floor(this.reportingRangeDays);
+      this.reportingRangeDaysInput.value = this.reportingRangeDays;
     }
   }
 
   /**
    * Sets the time interval for the chart.
-   * @param {string} rangeIncrementUnits - Time interval units (days, weeks, months).
+   * @param {string} timeInterval - Time interval units (days, weeks, months).
    */
-  setTimeInterval(rangeIncrementUnits) {
-    this.timeInterval = rangeIncrementUnits;
-    if (this.rangeIncrementUnitsElement) {
-      const option = Array.from(this.rangeIncrementUnitsElement.options).find((o) => o.value === rangeIncrementUnits);
+  setTimeInterval(timeInterval) {
+    this.timeInterval = timeInterval;
+    if (this.timeIntervalElement) {
+      const option = Array.from(this.timeIntervalElement.options).find((o) => o.value === timeInterval);
       option.selected = true;
     }
+  }
+
+  /**
+   * Computes the reporting range for the chart based on the number of days.
+   * @param {number} noOfDays - The number of days for the reporting range.
+   * @returns {Array} The computed start and end dates of the reporting range.
+   */
+  computeReportingRange(noOfDays) {
+    const finalDate = this.data[this.data.length - 1][this.datePropertyName];
+    let endDate = new Date(finalDate);
+    let startDate = addDaysToDate(finalDate, -Number(noOfDays));
+    if (this.selectedTimeRange) {
+      endDate = new Date(this.selectedTimeRange[1]);
+      startDate = new Date(this.selectedTimeRange[0]);
+      const diffDays = Number(noOfDays) - calculateDaysBetweenDates(startDate, endDate);
+      if (diffDays < 0) {
+        startDate = addDaysToDate(startDate, -Number(diffDays));
+      } else {
+        endDate = addDaysToDate(endDate, Number(diffDays));
+        if (endDate > finalDate) {
+          const diffEndDays = calculateDaysBetweenDates(finalDate, endDate);
+          endDate = finalDate;
+          startDate = addDaysToDate(startDate, -Number(diffEndDays));
+        }
+      }
+    }
+    if (startDate < this.data[0][this.datePropertyName]) {
+      startDate = this.data[0][this.datePropertyName];
+    }
+    return [startDate, endDate];
+  }
+
+  /**
+   * Creates and configures an x-axis based on the specified time interval.
+   * The axis is created using D3.js and configured for different time intervals: days, weeks, or months.
+   * @param {d3.ScaleTime} x - The D3 scale for the x-axis.
+   * @returns {d3.Axis} - The configured D3 axis for the x-axis.
+   */
+  createXAxis(x) {
+    let axis;
+    switch (this.timeInterval) {
+      case 'days':
+        axis = d3
+          .axisBottom(x)
+          .tickArguments([d3.timeDay.every(1)])
+          .tickFormat((d) => {
+            const date = new Date(d);
+            if (date.getUTCDay() === 0) {
+              return d3.timeFormat('%a %d/%m')(date);
+            }
+          });
+        break;
+      case 'weeks':
+        axis = d3.axisBottom(x).ticks(d3.timeWeek);
+        break;
+      case 'months':
+        axis = d3.axisBottom(x).ticks(d3.timeMonth);
+        break;
+      default:
+        axis = d3.axisBottom(x);
+    }
+    return axis;
+  }
+
+  /**
+   * Handles click events on the x-axis, cycling through different time intervals.
+   * This function changes the time interval state between days, weeks, and months,
+   * and then redraws the x-axis based on the selected time range.
+   */
+  handleXAxisClick() {
+    let timeInterval;
+    switch (this.timeInterval) {
+      case 'weeks':
+        timeInterval = 'months';
+        break;
+      case 'months':
+        timeInterval = 'days';
+        break;
+      case 'days':
+        timeInterval = 'weeks';
+        break;
+      default:
+        timeInterval = 'weeks';
+    }
+    this.setTimeInterval(timeInterval);
+    this.drawXAxis(this.gx, this.x.copy().domain(this.selectedTimeRange), this.height, true);
+  }
+
+  /**
+   * Sets up click listener for the X axis.
+   */
+  setupXAxisControl() {
+    this.gx.on('click', () => {
+      this.handleXAxisClick();
+      this.eventBus?.emitEvents(this.timeIntervalChangeEventName);
+      this.timeIntervalElement && (this.timeIntervalElement.value = this.timeInterval);
+    });
   }
 
   /**

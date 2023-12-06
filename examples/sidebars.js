@@ -1,5 +1,6 @@
 
 import { eventBus } from "../dist/graphs-renderer.js";
+import {formatDateToNumeric} from "../src/utils/utils.js";
 
 const layout = document.getElementById("layout");
 const leftSidebar = document.getElementById("left-sidebar");
@@ -18,6 +19,17 @@ const observationTextarea = document.getElementById("observation-input");
 const observationIdInput = document.getElementById("observation-id-input");
 const serviceIdInput = document.getElementById("service-id-input");
 const submitButton = document.getElementById("form-button");
+
+const scatterplotDiv = document.getElementById("scatterplot-form-fields-div");
+const cfdDiv = document.getElementById("cfd-form-fields-div");
+const avgCycleTimeInput = document.getElementById("average-cycle-time-input");
+const avgLeadTimeInput = document.getElementById("average-lead-time-input");
+const leadTimeInput = document.getElementById("lead-time-input");
+const throughputInput = document.getElementById("throughput-input");
+const wipInput = document.getElementById("wip-input");
+export const warningField = document.getElementById("warning-p");
+
+
 let isLeftSidebarOpen = false;
 let isRightSidebarOpen = false;
 
@@ -25,18 +37,25 @@ submitButton?.addEventListener("click", async () => {
   try {
     validateForm();
     const observation = {
-      data: {
-        date_from: dateInput.value,
-        observation_id: observationIdInput.value,
-        team_id: serviceIdInput.value,
-        chart_type: chartTypeInput.value,
-        work_item: workItemInput.value,
-        body: observationTextarea.value,
-      },
+      date_from: dateInput.value,
+      observation_id: observationIdInput.value,
+      team_id: serviceIdInput.value,
+      chart_type: chartTypeInput.value,
+      work_item: workItemInput.value,
+      body: observationTextarea.value,
     };
+    if (observation.chart_type === "CFD") {
+      avgCycleTimeInput.value !== "-" && (observation.avg_cycle_time = parseInt(avgCycleTimeInput.value.split(" ")[0], 10));
+      avgLeadTimeInput.value !== "-" && (observation.avg_lead_time = parseInt(avgLeadTimeInput.value.split(" ")[0], 10));
+      throughputInput.value !== "-" && (observation.throughput = parseFloat(throughputInput.value.split(" ")[0]));
+      wipInput.value !== "-" && (observation.wip = parseInt(wipInput.value.split(" ")[0], 10));
+    }
+    if (observation.chart_type === "SCATTERPLOT") {
+      leadTimeInput.value !== "-" && (observation.lead_time = parseInt(leadTimeInput.value.split(" ")[0], 10));
+    }
     eventBus.emitEvents("submit-observation-form", observation);
   } catch (e) {
-    alert("Error submitting the observation: " + e.message);
+    warningField.textContent = "Error submitting the observation: " + e.message;
   }
 });
 
@@ -114,23 +133,27 @@ function clearObservationForm() {
 
 export function initializeForm(data) {
   clearObservationForm();
-  workItemInput.value = data.ticketId || "";
-  workItemInput.readOnly = true;
+  if (data.chartType === "CFD") {
+    cfdDiv.classList.remove("hidden");
+    scatterplotDiv.classList.add("hidden");
+    avgCycleTimeInput.value = data.metrics.averageCycleTime ? data.metrics.averageCycleTime + " days" : "-";
+    avgLeadTimeInput.value = data.metrics.averageLeadTime ? data.metrics.averageLeadTime + " days" : "-";
+    throughputInput.value = data.metrics.throughput ? data.metrics.throughput + " items" : "-";
+    wipInput.value = data.metrics.wip ? data.metrics.wip + " items" : "-";
+  }
+  if (data.chartType === "SCATTERPLOT") {
+    cfdDiv.classList.add("hidden");
+    scatterplotDiv.classList.remove("hidden");
+    workItemInput.value = data.ticketId || "";
+    leadTimeInput.value = data.metrics.leadTime ? data.metrics.leadTime + " days" : "-";
+  }
   dateInput.value = formatDateToNumeric(data.date);
-  dateInput.readOnly = true;
   chartTypeInput.value = data.chartType;
   serviceIdInput.value = data.serviceId;
   observationTextarea.value = data.observationBody || "";
   observationIdInput.value = data.observationId || "";
 }
 
-function formatDateToNumeric(date) {
-  date = new Date(date);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
 
 function validateForm() {
   const errors = [];
@@ -144,3 +167,4 @@ function validateForm() {
     throw new Error(errors.join("\n"));
   }
 }
+

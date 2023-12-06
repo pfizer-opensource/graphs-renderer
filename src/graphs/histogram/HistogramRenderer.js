@@ -11,6 +11,8 @@ class HistogramRenderer extends Renderer {
   #noOfBins = 10;
   #yAccessor = (d) => d.length;
   #xAccessor = (d) => d.noOfDays;
+  xAxisLabel = '# of delivery days';
+  yAxisLabel = '# of tickets';
 
   /**
    * Creates a HistogramRenderer instance
@@ -67,7 +69,6 @@ class HistogramRenderer extends Renderer {
   updateGraph(domain) {
     this.drawXAxis(this.gx, this.x);
     this.drawYAxis(this.gy, this.y);
-
     const bars = this.chartArea.selectAll('.bar').data(this.#binnedData.filter((d) => d.length > 0));
     bars.exit().remove();
     bars
@@ -117,7 +118,6 @@ class HistogramRenderer extends Renderer {
     this.chartArea = this.addClipPath(this.svg, 'histogram-clip');
     this.#drawHistogram(this.chartArea, this.#binnedData, this.x, this.y);
     this.#drawPercentileLines(this.svg, this.data, this.x);
-    this.drawAxisLabels(this.svg, '# of delivery days', '# of tickets');
   }
 
   /**
@@ -170,9 +170,9 @@ class HistogramRenderer extends Renderer {
    */
   #handleTimeRangeChange(timeRange) {
     const currentSelectionData = this.data.filter((d) => d.delivered >= timeRange[0] && d.delivered <= timeRange[1]);
-    this.#setXScale(currentSelectionData);
+    this.#computeXScale(currentSelectionData);
     this.#binnedData = this.#computeBinnedData(this.x, currentSelectionData);
-    this.#setYScale(this.#binnedData);
+    this.#computeYScale(this.#binnedData);
     this.updateGraph(currentSelectionData);
   }
 
@@ -185,13 +185,14 @@ class HistogramRenderer extends Renderer {
    * @private
    */
   #drawAxes() {
-    this.#setXScale(this.data);
+    this.#computeXScale(this.data);
     this.#binnedData = this.#computeBinnedData(this.x, this.data);
-    this.#setYScale(this.#binnedData);
+    this.#computeYScale(this.#binnedData);
     this.gx = this.svg.append('g');
     this.gy = this.svg.append('g');
     this.drawXAxis(this.gx, this.x);
     this.drawYAxis(this.gy, this.y);
+    this.drawAxesLabels(this.svg, this.xAxisLabel, this.yAxisLabel);
   }
 
   /**
@@ -199,7 +200,7 @@ class HistogramRenderer extends Renderer {
    * @param {Array} data - Data to set the Y-scale.
    * @private
    */
-  #setYScale(data) {
+  #computeYScale(data) {
     const maxValue = d3.max(data, this.#yAccessor);
     const padding = maxValue * 0.08; // 10% padding
     const yDomain = [0, maxValue + padding];
@@ -211,7 +212,7 @@ class HistogramRenderer extends Renderer {
    * @param {Array} data - Data to set the X-scale.
    * @private
    */
-  #setXScale(data) {
+  #computeXScale(data) {
     const xDomain = [0, d3.max(data, this.#xAccessor)];
     this.x = this.computeLinearScale(xDomain, [0, this.width]).nice();
   }
