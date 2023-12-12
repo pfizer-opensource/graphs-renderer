@@ -1,4 +1,4 @@
-import { calculateDaysBetweenDates, addDaysToDate } from '../../utils/utils.js';
+import { calculateDaysBetweenDates } from '../../utils/utils.js';
 import UIControlsRenderer from '../UIControlsRenderer.js';
 import styles from '../tooltipStyles.module.css';
 
@@ -11,6 +11,11 @@ class ScatterplotRenderer extends UIControlsRenderer {
   #color = '#0ea5e9';
   currentXScale;
   currentYScale;
+  #areMetricsEnabled = false;
+  datePropertyName = 'delivered';
+  xAxisLabel = 'Time';
+  yAxisLabel = '# of delivery days';
+  timeIntervalChangeEventName = 'change-time-interval-scatterplot';
 
   /**
    * Creates a ScatterplotRenderer instance
@@ -30,9 +35,11 @@ class ScatterplotRenderer extends UIControlsRenderer {
    *     "ticketId": "TRON-12349"
    *   }
    * ];
+   * @param workTicketsURL - The tickets base url
    */
-  constructor(data) {
+  constructor(data, workTicketsURL) {
     super(data);
+    this.workTicketsURL = workTicketsURL;
     console.table(data);
   }
 
@@ -43,142 +50,10 @@ class ScatterplotRenderer extends UIControlsRenderer {
   setupEventBus(eventBus) {
     this.eventBus = eventBus;
     this.eventBus?.addEventListener('change-time-range-cfd', this.updateBrushSelection.bind(this));
-  }
-
-  //region Observation logging
-
-  /**
-   * Sets up observation logging for the renderer.
-   * @param {Object} observations - Observations data for the renderer.
-   * @param {Object} workTicketsURL - The work items base url.
-   */
-  setupObservationLogging(observations, workTicketsURL) {
-    if (observations) {
-      this.#createTooltip();
-      this.#setupMouseLeaveHandler();
-      this.workTicketsURL = workTicketsURL;
-      this.displayObservationMarkers(observations);
-    }
-  }
-
-  /**
-   * Displays markers for the observations logged on the graph.
-   * @param {Object} observations - Observations data to be marked on the graph.
-   */
-  displayObservationMarkers(observations) {
-    if (observations) {
-      this.observations = observations;
-      this.#removeObservationMarkers();
-      this.#createObservationMarkers();
-    }
-  }
-
-  /**
-   * Removes observation markers from the chart.
-   * @private
-   */
-  #removeObservationMarkers() {
-    this.chartArea.selectAll('.ring').remove();
-  }
-
-  /**
-   * Creates markers on the graph for the observations logged.
-   * @private
-   */
-  #createObservationMarkers() {
-    this.chartArea
-      .selectAll('ring')
-      .data(this.data.filter((d) => this.observations.data.rows.some((o) => o.work_item === d.ticketId)))
-      .enter()
-      .append('circle')
-      .attr('class', 'ring')
-      .attr('cx', (d) => this.currentXScale(d.delivered))
-      .attr('cy', (d) => this.currentYScale(d.noOfDays))
-      .attr('r', 8)
-      .attr('fill', 'none')
-      .attr('stroke', 'black')
-      .attr('stroke-width', '2px');
-  }
-
-  //endregion
-
-  //region Tooltip
-
-  /**
-   * Shows the tooltip with provided event data.
-   * @param {Object} event - The event data for the tooltip.
-   */
-  #showTooltip(event) {
-    this.#clearTooltipContent();
-    this.#positionTooltip(event.tooltipLeft, event.tooltipTop);
-    this.#populateTooltip(event);
-  }
-
-  /**
-   * Hides the tooltip.
-   */
-  hideTooltip() {
-    this.tooltip.transition().duration(100).style('opacity', 0).style('pointer-events', 'none');
-  }
-
-  /**
-   * Creates a tooltip for the chart used for the observation logging.
-   * @private
-   */
-  #createTooltip() {
-    this.tooltip = d3.select('body').append('div').attr('class', styles.tooltip).attr('id', 's-tooltip').style('opacity', 0);
-  }
-
-  /**
-   * Populates the tooltip's content with event data: ticket id and observation body
-   * @private
-   * @param {Object} event - The event data for the tooltip.
-   */
-  #populateTooltip(event) {
-    this.tooltip
-      .style('pointer-events', 'auto')
-      .style('opacity', 0.9)
-      .append('a')
-      .style('text-decoration', 'underline')
-      .attr('href', `${this.workTicketsURL}/${event.ticketId}`)
-      .attr('href', `#`)
-      .text(event.ticketId)
-      .attr('target', '_blank');
-    event.observationBody && this.tooltip.append('p').text('Observation: ' + event.observationBody);
-  }
-
-  /**
-   * Positions the tooltip on the page.
-   * @private
-   * @param {number} left - The left position for the tooltip.
-   * @param {number} top - The top position for the tooltip.
-   */
-  #positionTooltip(left, top) {
-    this.tooltip.transition().duration(100).style('opacity', 0.9).style('pointer-events', 'auto');
-    this.tooltip.style('left', left + 'px').style('top', top + 'px');
-  }
-
-  /**
-   * Clears the content of the tooltip.
-   * @private
-   */
-  #clearTooltipContent() {
-    this.tooltip.selectAll('*').remove();
-  }
-
-  /**
-   * Internal method to set up a handler for mouse leave events on the chart area.
-   * @private
-   */
-  #setupMouseLeaveHandler() {
-    d3.select(this.svg.node().parentNode).on('mouseleave', (event) => {
-      if (event.relatedTarget !== this.tooltip.node()) {
-        this.hideTooltip();
-      }
+    this.eventBus?.addEventListener('change-time-interval-cfd', () => {
+      this.handleXAxisClick();
     });
   }
-
-  //endregion
 
   //region Graph and brush rendering
 
@@ -196,8 +71,8 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * Renders a brush component with the time range selection.
    */
   renderBrush() {
-    const defaultSelectionRange = this.defaultTimeRange.map((d) => this.x(d));
     const svgBrush = this.createSvg(this.brushSelector, this.focusHeight);
+    const defaultSelectionRange = this.defaultTimeRange.map((d) => this.x(d));
     this.brush = d3
       .brushX()
       .extent([
@@ -220,7 +95,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
 
     const brushArea = this.addClipPath(svgBrush, 'scatterplot-brush-clip', this.width, this.focusHeight - this.margin.top + 1);
     this.#drawScatterplot(brushArea, this.data, this.x, this.y.copy().range([this.focusHeight - this.margin.top - 2, 2]));
-    this.drawXAxis(svgBrush.append('g'), this.x, '', this.focusHeight - this.margin.top);
+    this.drawXAxis(svgBrush.append('g'), this.x, this.focusHeight - this.margin.top);
     this.brushGroup = brushArea;
     this.brushGroup.call(this.brush).call(
       this.brush.move,
@@ -249,7 +124,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
     this.currentXScale = this.x.copy().domain(domain);
     this.currentYScale = this.y.copy().domain([0, maxY]).nice();
     const focusData = this.data.filter((d) => d.delivered <= domain[1] && d.delivered >= domain[0]);
-    this.drawXAxis(this.gx, this.currentXScale, this.timeInterval, this.height);
+    this.drawXAxis(this.gx, this.currentXScale, this.height);
     this.drawYAxis(this.gy, this.currentYScale);
 
     this.chartArea
@@ -286,9 +161,9 @@ class ScatterplotRenderer extends UIControlsRenderer {
    */
   #drawArea() {
     this.chartArea = this.addClipPath(this.svg, 'scatterplot-clip');
+    this.chartArea.append('rect').attr('width', '100%').attr('height', '100%').attr('id', 'scatterplot-area').attr('fill', 'transparent');
     this.#drawScatterplot(this.chartArea, this.data, this.x, this.y);
     this.#drawPercentileLines(this.svg, this.data, this.y);
-    this.drawAxisLabels(this.svg, 'Time', '# of delivery days');
   }
 
   /**
@@ -313,51 +188,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
       .attr('cy', (d) => y(d.noOfDays))
       .style('cursor', 'pointer')
       .attr('fill', this.#color)
-      .on('click', (event, d) => {
-        if (this.observations) {
-          const observation = this.observations.data.rows.find((o) => o.work_item === d.ticketId);
-          const data = {
-            date: d.delivered,
-            ticketId: d.ticketId,
-            tooltipLeft: event.pageX,
-            tooltipTop: event.pageY,
-            observationBody: observation?.body,
-            observationId: observation?.id,
-          };
-          this.#showTooltip(data);
-          this.eventBus?.emitEvents('scatterplot-click', data);
-        }
-      });
-  }
-
-  /**
-   * Computes the reporting range for the chart based on the number of days.
-   * @param {number} noOfDays - The number of days for the reporting range.
-   * @returns {Array} The computed start and end dates of the reporting range.
-   */
-  computeReportingRange(noOfDays) {
-    const finalDate = this.data[this.data.length - 1].delivered;
-    let endDate = new Date(finalDate);
-    let startDate = addDaysToDate(finalDate, -Number(noOfDays));
-    if (this.selectedTimeRange) {
-      endDate = new Date(this.selectedTimeRange[1]);
-      startDate = new Date(this.selectedTimeRange[0]);
-      const diffDays = Number(noOfDays) - calculateDaysBetweenDates(startDate, endDate);
-      if (diffDays < 0) {
-        startDate = addDaysToDate(startDate, -Number(diffDays));
-      } else {
-        endDate = addDaysToDate(endDate, Number(diffDays));
-        if (endDate > finalDate) {
-          const diffEndDays = calculateDaysBetweenDates(finalDate, endDate);
-          endDate = finalDate;
-          startDate = addDaysToDate(startDate, -Number(diffEndDays));
-        }
-      }
-    }
-    if (startDate < this.data[0].delivered) {
-      startDate = this.data[0].delivered;
-    }
-    return [startDate, endDate];
+      .on('click', (event, d) => this.#handleMouseClickEvent(event, d));
   }
 
   //endregion
@@ -369,15 +200,23 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * @private
    */
   #drawAxes() {
-    const xDomain = d3.extent(this.data, (d) => d.delivered);
-    this.x = this.computeTimeScale(xDomain, [0, this.width]);
-    const yDomain = [0, d3.max(this.data, (d) => d.noOfDays)];
-    this.y = this.computeLinearScale(yDomain, [this.height, 0]).nice();
-
+    this.#computeXScale();
+    this.#computeYScale();
     this.gx = this.svg.append('g');
     this.gy = this.svg.append('g');
-    this.drawXAxis(this.gx, this.x, this.timeInterval);
+    this.drawXAxis(this.gx, this.x, this.height, true);
     this.drawYAxis(this.gy, this.y);
+    this.drawAxesLabels(this.svg, this.xAxisLabel, this.yAxisLabel);
+  }
+
+  #computeYScale() {
+    const yDomain = [0, d3.max(this.data, (d) => d.noOfDays)];
+    this.y = this.computeLinearScale(yDomain, [this.height, 0]).nice();
+  }
+
+  #computeXScale() {
+    const xDomain = d3.extent(this.data, (d) => d.delivered);
+    this.x = this.computeTimeScale(xDomain, [0, this.width]);
   }
 
   /**
@@ -385,36 +224,45 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * @override
    * @param {d3.Selection} g - The SVG group element where the axis is drawn.
    * @param {d3.Scale} x - The scale to use for the axis.
-   * @param {string} [timeInterval] - The time interval for the X-axis ticks.
    * @param {number} [height=this.height] - The height at which to draw the axis.
+   * @param isGraph
    */
-  drawXAxis(g, x, timeInterval, height = this.height) {
-    let axis;
-    timeInterval && this.setTimeInterval(timeInterval);
-    switch (timeInterval) {
-      case 'days':
-        axis = d3
-          .axisBottom(x)
-          .tickArguments([d3.timeDay.every(1)])
-          .tickFormat((d) => {
-            const date = new Date(d);
-            if (date.getUTCDay() === 0) {
-              return d3.timeFormat('%a %d/%m')(date);
-            }
-          });
-        break;
-      case 'weeks':
-        axis = d3.axisBottom(x).ticks(d3.timeWeek);
-        break;
-      case 'months':
-        axis = d3.axisBottom(x).ticks(d3.timeMonth);
-        break;
-      default:
-        axis = d3.axisBottom(x);
+  drawXAxis(g, x, height = this.height, isGraph = false) {
+    const axis = this.createXAxis(x);
+    if (isGraph) {
+      const axisHeight = 25;
+      let grayBand = g.select('.axis-background');
+      if (grayBand.empty()) {
+        grayBand = g
+          .append('rect')
+          .attr('class', 'axis-background')
+          .attr('x', 0)
+          .attr('y', 0)
+          .attr('width', this.width)
+          .attr('height', axisHeight)
+          .attr('fill', 'gray')
+          .attr('opacity', 0.5)
+          .attr('cursor', 'pointer');
+      }
+      const xAxisGroup = g.attr('class', 'x-axis-group').attr('transform', `translate(0, ${height})`);
+      xAxisGroup.call(axis);
+      xAxisGroup.selectAll('.tick line').attr('stroke', 'black').attr('opacity', 0.3).attr('y1', 15).attr('y2', -this.height);
+      xAxisGroup.selectAll('.tick text').attr('fill', 'black').attr('y', axisHeight).attr('dy', '10px');
+      xAxisGroup.select('.domain').remove();
+      grayBand.on('mouseover', function () {
+        d3.select(this)
+          .transition()
+          .duration(300)
+          .attr('height', axisHeight + 10);
+      });
+      grayBand.on('mouseout', function () {
+        d3.select(this).transition().duration(300).attr('height', axisHeight);
+      });
+    } else {
+      g.call(axis).attr('transform', `translate(0, ${height})`);
+      const outerXAxisTicks = g.append('g').attr('class', 'outer-ticks').call(axis?.tickSize(-height).tickFormat(''));
+      outerXAxisTicks.selectAll('.tick line').attr('opacity', 0.1);
     }
-    g.call(axis).attr('transform', `translate(0, ${height})`);
-    const outerXAxisTicks = g.append('g').attr('class', 'outer-ticks').call(axis.tickSize(-height).tickFormat(''));
-    outerXAxisTicks.selectAll('.tick line').attr('opacity', 0.1);
   }
 
   /**
@@ -430,6 +278,185 @@ class ScatterplotRenderer extends UIControlsRenderer {
 
   //endregion
 
+  //region Observation logging
+
+  /**
+   * Sets up observation logging for the renderer.
+   * @param {Object} observations - Observations data for the renderer.
+   */
+  setupObservationLogging(observations) {
+    if (observations) {
+      this.displayObservationMarkers(observations);
+      this.enableMetrics();
+    }
+  }
+
+  /**
+   * Displays markers for the observations logged on the graph.
+   * @param {Object} observations - Observations data to be marked on the graph.
+   */
+  displayObservationMarkers(observations) {
+    if (observations?.data) {
+      this.observations = observations;
+      this.#removeObservationMarkers();
+      this.#createObservationMarkers();
+    }
+  }
+
+  /**
+   * Removes observation markers from the chart.
+   * @private
+   */
+  #removeObservationMarkers() {
+    this.chartArea.selectAll('.ring').remove();
+  }
+
+  /**
+   * Creates markers on the graph for the observations logged.
+   * @private
+   */
+  #createObservationMarkers() {
+    this.chartArea
+      .selectAll('ring')
+      .data(this.data.filter((d) => this.observations.data?.some((o) => o.work_item === d.ticketId)))
+      .enter()
+      .append('circle')
+      .attr('class', 'ring')
+      .attr('cx', (d) => this.currentXScale(d.delivered))
+      .attr('cy', (d) => this.currentYScale(d.noOfDays))
+      .attr('r', 8)
+      .attr('fill', 'none')
+      .attr('stroke', 'black')
+      .attr('stroke-width', '2px');
+  }
+
+  //endregion
+
+  //region Tooltip
+
+  /**
+   * Shows the tooltip with provided event data.
+   * @param {Object} event - The event data for the tooltip.
+   */
+  #showTooltip(event) {
+    !this.tooltip && this.#createTooltip();
+    this.#clearTooltipContent();
+    this.#positionTooltip(event.tooltipLeft, event.tooltipTop);
+    this.#populateTooltip(event);
+  }
+
+  /**
+   * Hides the tooltip.
+   */
+  hideTooltip() {
+    this.tooltip?.transition().duration(100).style('opacity', 0).style('pointer-events', 'none');
+  }
+
+  /**
+   * Creates a tooltip for the chart used for the observation logging.
+   * @private
+   */
+  #createTooltip() {
+    this.tooltip = d3.select('body').append('div').attr('class', styles.tooltip).attr('id', 's-tooltip').style('opacity', 0);
+  }
+
+  /**
+   * Populates the tooltip's content with event data: ticket id and observation body
+   * @private
+   * @param {Object} event - The event data for the tooltip.
+   */
+  #populateTooltip(event) {
+    this.tooltip
+      .style('pointer-events', 'auto')
+      .style('opacity', 0.9)
+      .append('a')
+      .style('text-decoration', 'underline')
+      .attr('href', `${this.workTicketsURL}/${event.ticketId}`)
+      .text(event.ticketId)
+      .attr('target', '_blank');
+    event.observationBody && this.tooltip.append('p').text('Observation: ' + event.observationBody);
+  }
+
+  /**
+   * Positions the tooltip on the page.
+   * @private
+   * @param {number} left - The left position for the tooltip.
+   * @param {number} top - The top position for the tooltip.
+   */
+  #positionTooltip(left, top) {
+    this.tooltip.transition().duration(100).style('opacity', 0.9).style('pointer-events', 'auto');
+    this.tooltip.style('left', left + 'px').style('top', top + 'px');
+  }
+
+  /**
+   * Clears the content of the tooltip.
+   * @private
+   */
+  #clearTooltipContent() {
+    this.tooltip.selectAll('*').remove();
+  }
+
+  //endregion
+
+  //region Metrics
+
+  /**
+   * Enables metric tracking on the chart area.
+   * It activates mouse event handlers for mouse movement events on the chart area.
+   * If metrics are already enabled, the function exits without making changes.
+   */
+  enableMetrics() {
+    if (this.#areMetricsEnabled) {
+      return; // Exit the function if metrics are already enabled
+    }
+    this.chartArea.on('mousemove', (event) => this.eventBus?.emitEvents('scatterplot-mousemove', event));
+    this.chartArea.on('mouseleave', () => this.eventBus?.emitEvents('scatterplot-mouseleave'));
+    this.#setupMouseLeaveHandler();
+    this.#areMetricsEnabled = true;
+  }
+
+  /**
+   * Handles mouse click events
+   * @param {Object} event - The mouse event object.
+   * @param d - The scatterplot graph data entry
+   * @private
+   */
+  #handleMouseClickEvent(event, d) {
+    let data = {
+      ticketId: d.ticketId,
+      tooltipLeft: event.pageX,
+      tooltipTop: event.pageY,
+    };
+    if (this.#areMetricsEnabled) {
+      const observation = this.observations?.data?.find((o) => o.work_item === d.ticketId);
+      data = {
+        ...data,
+        date: d.delivered,
+        metrics: {
+          leadTime: d.noOfDays,
+        },
+        observationBody: observation?.body,
+        observationId: observation?.id,
+      };
+      this.eventBus?.emitEvents('scatterplot-click', data);
+    }
+    this.#showTooltip(data);
+  }
+
+  /**
+   * Internal method to set up a handler for mouse leave events on the chart area.
+   * @private
+   */
+  #setupMouseLeaveHandler() {
+    d3.select(this.svg.node().parentNode).on('mouseleave', (event) => {
+      if (event.relatedTarget !== this.tooltip?.node()) {
+        this.hideTooltip();
+      }
+    });
+  }
+
+  //endregion
+
   //region Percentile lines rendering
 
   /**
@@ -437,7 +464,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * @private
    * @param {d3.Selection} svg - The SVG selection to draw the lines.
    * @param {Array} data - The array of data points.
-   * @param {d3.Scale} x - The Y-axis scale.
+   * @param {d3.Scale} y - The Y-axis scale.
    */
   #drawPercentileLines(svg, data, y) {
     const dataSortedByNoOfDays = [...data].sort((a, b) => a.noOfDays - b.noOfDays);
@@ -468,7 +495,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * Draws a single percentile line on the scatterplot.
    * @private
    * @param {d3.Selection} svg - The SVG selection to draw the line.
-   * @param {d3.Scale} x - The Y-axis scale.
+   * @param {d3.Scale} y - The Y-axis scale.
    * @param {number} percentile - The percentile value.
    * @param {string} text - The text label for the percentile line.
    * @param {string} percentileId - The unique identifier for the percentile line.

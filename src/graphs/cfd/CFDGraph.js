@@ -37,7 +37,7 @@ class CFDGraph {
    *   }
    * ];
    */
-  constructor(data, states) {
+  constructor(data, states = ['analysis_active', 'analysis_done', 'in_progress', 'dev_complete', 'verification_start', 'delivered']) {
     this.data = data;
     this.states = states;
   }
@@ -48,7 +48,7 @@ class CFDGraph {
    * @returns {Array.<{
    *   date: string,
    *   delivered: number,
-   *   verif_start: number,
+   *   verification_start: number,
    *   dev_complete: number,
    *   in_progress: number,
    *   analysis_done: number,
@@ -79,15 +79,13 @@ class CFDGraph {
       const currentDate = new Date(date);
       currentDate.setHours(0, 0, 0, 0);
       const currentTimestamp = currentDate.getTime() / 1000;
-      dataSet.push({
+      const dataEntry = {
         date: currentDate,
-        delivered: this.#getNoOfTicketsInState(this.states[5], currentTimestamp),
-        verif_start: this.#getNoOfTicketsInState(this.states[4], currentTimestamp),
-        dev_complete: this.#getNoOfTicketsInState(this.states[3], currentTimestamp),
-        in_progress: this.#getNoOfTicketsInState(this.states[2], currentTimestamp),
-        analysis_done: this.#getNoOfTicketsInState(this.states[1], currentTimestamp),
-        analysis_active: this.#getNoOfTicketsInState(this.states[0], currentTimestamp),
+      };
+      this.states.forEach((state, index) => {
+        dataEntry[state] = this.#getNoOfTicketsInState(this.states[index], currentTimestamp);
       });
+      dataSet.push(dataEntry);
     }
     return dataSet;
   }

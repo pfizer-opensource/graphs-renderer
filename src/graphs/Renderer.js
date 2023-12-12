@@ -4,7 +4,7 @@ import * as d3 from 'd3';
  * Represents a generic graphs renderer
  */
 export default class Renderer {
-  margin = { top: 20, right: 40, bottom: 60, left: 40 };
+  margin = { top: 30, right: 40, bottom: 70, left: 40 };
   width = 1040 - this.margin.left - this.margin.right;
   height = 460 - this.margin.top - this.margin.bottom;
   axisLabelFontSize = 14;
@@ -22,6 +22,7 @@ export default class Renderer {
 
   /**
    * Creates an SVG element within a specified DOM selector.
+   * @param selector - The svg selector
    * @param {number} [height=this.height] - The height of the SVG element.
    * @param {number} [width=this.width] - The width of the SVG element.
    * @returns {d3.Selection} The created SVG element.
@@ -68,8 +69,10 @@ export default class Renderer {
    * @param {d3.Selection} g - The SVG group element where the axis is drawn.
    * @param {d3.Scale} x - The scale to use for the axis.
    * @param {number} [height=this.height] - The height at which to draw the axis.
+   * @param isGraph [isGraph=true] - Signals if the x axis is drawn for the graphs or for the brush
    */
-  drawXAxis(g, x, height = this.height) {
+  /* eslint-disable-next-line no-unused-vars */
+  drawXAxis(g, x, height = this.height, isGraph = true) {
     g.call(d3.axisBottom(x)).attr('transform', `translate(0, ${height})`);
   }
 
@@ -110,13 +113,13 @@ export default class Renderer {
    * @param {string} xLabel - The label for the X-axis.
    * @param {string} yLabel - The label for the Y-axis.
    */
-  drawAxisLabels(svg, xLabel, yLabel) {
+  drawAxesLabels(svg, xLabel, yLabel) {
     // Add X axis label:
     svg
       .append('text')
       .attr('text-anchor', 'end')
       .attr('x', this.width)
-      .attr('y', this.height + 35)
+      .attr('y', this.height + 55)
       .text(xLabel)
       .style('font-size', this.axisLabelFontSize);
 
@@ -135,7 +138,8 @@ export default class Renderer {
    * Abstract method to update the chart. Must be implemented in subclasses.
    * @param {Array} domain - The domain to update the chart with.
    */
-  updateGraph(_domain) {
+  /* eslint-disable-next-line no-unused-vars */
+  updateGraph(domain) {
     throw new Error('Method not implemented. It must be implemented in subclasses!');
   }
 }
