@@ -22,12 +22,13 @@ const submitButton = document.getElementById("form-button");
 
 const scatterplotDiv = document.getElementById("scatterplot-form-fields-div");
 const cfdDiv = document.getElementById("cfd-form-fields-div");
-const avgCycleTimeInput = document.getElementById("average-cycle-time-input");
+const cycleTimesByStateSelect = document.getElementById("cycle-times-select");
 const avgLeadTimeInput = document.getElementById("average-lead-time-input");
 const leadTimeInput = document.getElementById("lead-time-input");
 const throughputInput = document.getElementById("throughput-input");
 const wipInput = document.getElementById("wip-input");
 export const warningField = document.getElementById("warning-p");
+let cycleTimesByState = {}
 
 
 let isLeftSidebarOpen = false;
@@ -45,7 +46,8 @@ submitButton?.addEventListener("click", async () => {
       body: observationTextarea.value,
     };
     if (observation.chart_type === "CFD") {
-      avgCycleTimeInput.value !== "-" && (observation.avg_cycle_time = parseInt(avgCycleTimeInput.value.split(" ")[0], 10));
+      observation.avg_cycle_time = parseInt(cycleTimesByStateSelect.value.split(" ")[0], 10);
+      observation.cycle_times_by_state = cycleTimesByState
       avgLeadTimeInput.value !== "-" && (observation.avg_lead_time = parseInt(avgLeadTimeInput.value.split(" ")[0], 10));
       throughputInput.value !== "-" && (observation.throughput = parseFloat(throughputInput.value.split(" ")[0]));
       wipInput.value !== "-" && (observation.wip = parseInt(wipInput.value.split(" ")[0], 10));
@@ -132,11 +134,27 @@ function clearObservationForm() {
 }
 
 export function initializeForm(data) {
+
   clearObservationForm();
   if (data.chartType === "CFD") {
     cfdDiv.classList.remove("hidden");
     scatterplotDiv.classList.add("hidden");
-    avgCycleTimeInput.value = data.metrics.averageCycleTime ? data.metrics.averageCycleTime + " days" : "-";
+    let selectedState;
+    cycleTimesByState = data.metrics.cycleTimesByState
+    cycleTimesByStateSelect.innerHTML=''
+    for (const state in data.metrics.cycleTimesByState) {
+      const option = document.createElement('option');
+      option.textContent = `${data.metrics.cycleTimesByState[state]} days - ${state}`;
+      option.value = state;
+      cycleTimesByStateSelect.appendChild(option);
+      if(data.metrics.cycleTimesByState[state] === data.metrics.biggestCycleTime){
+        option.selected = true
+        selectedState = state
+      }
+    }
+    cycleTimesByStateSelect.addEventListener('change', (event) => {
+      cycleTimesByStateSelect.value = selectedState;
+    });
     avgLeadTimeInput.value = data.metrics.averageLeadTime ? data.metrics.averageLeadTime + " days" : "-";
     throughputInput.value = data.metrics.throughput ? data.metrics.throughput + " items" : "-";
     wipInput.value = data.metrics.wip ? data.metrics.wip + " items" : "-";

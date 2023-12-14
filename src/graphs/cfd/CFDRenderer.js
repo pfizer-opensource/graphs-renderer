@@ -438,7 +438,7 @@ class CFDRenderer extends UIControlsRenderer {
    */
   #positionTooltip(left, top, width) {
     this.tooltip?.transition().duration(100).style('opacity', 0.9).style('pointer-events', 'auto');
-    this.tooltip?.style('left', left - width + 'px').style('top', top + 50 + 'px');
+    this.tooltip?.style('left', left - width + 'px').style('top', top + 30 + 'px');
   }
 
   /**
@@ -448,20 +448,19 @@ class CFDRenderer extends UIControlsRenderer {
    */
   #populateTooltip(event) {
     this.tooltip?.append('p').text(formatDateToLocalString(event.date)).attr('class', 'text-center');
-    const gridContainer = this.tooltip?.append('div').attr('class', 'grid grid-cols-2 gap-2');
-    if (event.metrics.averageCycleTime > 0) {
+    const gridContainer = this.tooltip?.append('div').attr('class', 'grid grid-cols-2');
+    if (event.metrics.throughput > 0) {
+      gridContainer.append('span').text('Throughput:').attr('class', 'pr-1').style('text-align', 'start');
+      gridContainer.append('span').text(`${event.metrics.throughput} items`).attr('class', 'pl-1').style('text-align', 'start');
+    }
+    if (event.metrics.wip > 0) {
+      gridContainer.append('span').text('WIP:').attr('class', 'pr-1').style('text-align', 'start').style('color', this.#wipColor);
       gridContainer
         .append('span')
-        .text('Cycle time:')
-        .attr('class', 'pr-1')
-        .style('text-align', 'start')
-        .style('color', this.#cycleTimeColor);
-      gridContainer
-        .append('span')
-        .text(`${event.metrics.averageCycleTime} days`)
+        .text(`${event.metrics.wip} items`)
         .attr('class', 'pl-1')
         .style('text-align', 'start')
-        .style('color', this.#cycleTimeColor);
+        .style('color', this.#wipColor);
     }
     if (event.metrics.averageLeadTime > 0) {
       gridContainer
@@ -477,18 +476,33 @@ class CFDRenderer extends UIControlsRenderer {
         .style('text-align', 'start')
         .style('color', this.#leadTimeColor);
     }
-    if (event.metrics.wip > 0) {
-      gridContainer.append('span').text('WIP:').attr('class', 'pr-1').style('text-align', 'start').style('color', this.#wipColor);
+    if (event.metrics.averageCycleTime > 0) {
       gridContainer
         .append('span')
-        .text(`${event.metrics.wip} items`)
+        .text('Cycle time:')
+        .attr('class', 'pr-1')
+        .style('text-align', 'start')
+        .style('color', this.#cycleTimeColor);
+      gridContainer
+        .append('span')
+        .text(`${event.metrics.averageCycleTime} days`)
         .attr('class', 'pl-1')
         .style('text-align', 'start')
-        .style('color', this.#wipColor);
+        .style('color', this.#cycleTimeColor);
     }
-    if (event.metrics.throughput > 0) {
-      gridContainer.append('span').text('Throughput:').attr('class', 'pr-1').style('text-align', 'start');
-      gridContainer.append('span').text(`${event.metrics.throughput} items`).attr('class', 'pl-1').style('text-align', 'start');
+    if (event.metrics.currentState) {
+      gridContainer
+        .append('span')
+        .text('State:')
+        .attr('class', 'pr-1')
+        .style('text-align', 'start')
+        .style('color', this.#statesColors(event.metrics.currentState));
+      gridContainer
+        .append('span')
+        .text(`${event.metrics.currentState}`)
+        .attr('class', 'pl-1')
+        .style('text-align', 'start')
+        .style('color', this.#statesColors(event.metrics.currentState));
     }
     if (event.observationBody) {
       gridContainer.append('span').text('Observation:').attr('class', 'pr-1').style('text-align', 'start');
@@ -576,22 +590,33 @@ class CFDRenderer extends UIControlsRenderer {
    */
   #computeMetrics(currentDate, currentCumulativeCount, excludeCycleTime = false) {
     currentDate = new Date(currentDate);
+    currentDate.setHours(0, 0, 0, 0);
     const currentDataEntry = this.data.find((d) => areDatesEqual(new Date(d.date), currentDate));
     if (currentDataEntry) {
+      const filteredData = this.data.filter((d) => d.date <= currentDate).reverse();
       const currentStateIndex = this.#getCurrentStateIndex(currentCumulativeCount, currentDataEntry);
-      const currentStateCumulativeCount =
-        currentStateIndex >= 0 ? this.#getNoOfItems(currentDataEntry, this.states[currentStateIndex]) : -1;
       const currentDeliveredItems = currentDataEntry.delivered;
-      const { cycleTimeDateBefore, leadTimeDateBefore } = this.#computeCycleAndLeadTimeDates(
-        currentDate,
-        currentStateCumulativeCount,
-        currentDeliveredItems,
-        currentStateIndex
-      );
-
-      let averageCycleTime = cycleTimeDateBefore ? Math.floor(calculateDaysBetweenDates(cycleTimeDateBefore, currentDate)) : null;
+      const leadTimeDateBefore = this.#computeLeadTimeDate(currentDeliveredItems, filteredData);
+      let cycleTimeDateBefore = null;
+      let averageCycleTime = null;
+      let biggestCycleTime = 0;
+      let currentStateCumulativeCount = null;
+      let cycleTimesByState = {};
+      cycleTimesByState[this.states[0]] = 0;
+      for (let i = 0; i < this.states.length - 1; i++) {
+        let stateCumulativeCount = this.#getNoOfItems(currentDataEntry, this.states[i]);
+        let cycleTimeDate = this.#computeCycleTimeDate(stateCumulativeCount, i, filteredData);
+        cycleTimesByState[this.states[i + 1]] = cycleTimeDate ? Math.floor(calculateDaysBetweenDates(cycleTimeDate, currentDate)) : null;
+        if (cycleTimesByState[this.states[i + 1]] > biggestCycleTime) {
+          biggestCycleTime = cycleTimesByState[this.states[i + 1]];
+        }
+        if (currentStateIndex > 0 && i + 1 === currentStateIndex) {
+          cycleTimeDateBefore = cycleTimeDate;
+          averageCycleTime = cycleTimesByState[this.states[i + 1]];
+          currentStateCumulativeCount = stateCumulativeCount;
+        }
+      }
       const averageLeadTime = leadTimeDateBefore ? Math.floor(calculateDaysBetweenDates(leadTimeDateBefore, currentDate)) : null;
-
       const noOfItemsBefore = this.#getNoOfItems(currentDataEntry, this.states[this.states.indexOf('delivered')]);
       const noOfItemsAfter = this.#getNoOfItems(currentDataEntry, this.states[this.states.indexOf('analysis_active')]);
 
@@ -610,10 +635,9 @@ class CFDRenderer extends UIControlsRenderer {
 
       return {
         currentState: this.states[currentStateIndex],
-        cycleTimeDateBefore: formatDateToLocalString(cycleTimeDateBefore),
-        leadTimeDateBefore: formatDateToLocalString(leadTimeDateBefore),
         wip,
-        averageCycleTime,
+        cycleTimesByState,
+        biggestCycleTime,
         averageLeadTime,
         throughput,
       };
@@ -621,32 +645,24 @@ class CFDRenderer extends UIControlsRenderer {
     return {};
   }
 
-  /**
-   * Computes the dates for cycle time and lead time based on the current state of the data.
-   * @param {Date} currentDate - The current date for which the computation is made.
-   * @param {number} currentStateCumulativeCount - The cumulative count of items in the current state.
-   * @param {number} currentDeliveredItems - The count of delivered items up to the current date.
-   * @param {number} currentStateIndex - The index of the current state in the states array.
-   * @returns {{cycleTimeDateBefore: Date | null, leadTimeDateBefore: Date | null}}
-   *          An object containing the computed cycle time date and lead time date prior to the current date.
-   */
-
-  #computeCycleAndLeadTimeDates(currentDate, currentStateCumulativeCount, currentDeliveredItems, currentStateIndex) {
-    let cycleTimeDateBefore = null;
-    let leadTimeDateBefore = null;
-    for (const entry of this.data) {
+  #computeLeadTimeDate(currentDeliveredItems, filteredData) {
+    for (const entry of filteredData) {
       const entryDate = new Date(entry.date);
-      if (entryDate >= currentDate) continue;
-
-      if (currentStateCumulativeCount >= 0) {
-        const cycleTimeCumulativeCount = this.#getNoOfItems(entry, this.states[currentStateIndex + 1]);
-        if (cycleTimeCumulativeCount <= currentStateCumulativeCount) cycleTimeDateBefore = entryDate;
-      }
-
       const leadTimeCumulativeCount = this.#getNoOfItems(entry, this.states[this.states.length - 1]);
-      if (leadTimeCumulativeCount <= currentDeliveredItems) leadTimeDateBefore = entryDate;
+      if (leadTimeCumulativeCount <= currentDeliveredItems) return entryDate;
     }
-    return { cycleTimeDateBefore, leadTimeDateBefore };
+    return null;
+  }
+
+  #computeCycleTimeDate(currentStateCumulativeCount, currentStateIndex, filteredData) {
+    for (const entry of filteredData) {
+      const entryDate = new Date(entry.date);
+      const cycleTimeCumulativeCount = this.#getNoOfItems(entry, this.states[currentStateIndex + 1]);
+      if (cycleTimeCumulativeCount <= currentStateCumulativeCount) {
+        return entryDate;
+      }
+    }
+    return null;
   }
 
   /**
@@ -781,7 +797,7 @@ class CFDRenderer extends UIControlsRenderer {
       let cumulativeCount = 0;
       for (let stateIndex = 0; stateIndex < this.states.length; stateIndex++) {
         cumulativeCount += currentDataEntry[this.states[stateIndex]];
-        if (currentCumulativeCount <= cumulativeCount) {
+        if (currentCumulativeCount < cumulativeCount) {
           return stateIndex;
         }
       }
