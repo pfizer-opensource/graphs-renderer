@@ -34,14 +34,17 @@ async function renderGraphs(data, serviceId) {
     const cfdGraphElementSelector = "#cfd-area-div";
     const cfdBrushElementSelector = "#cfd-brush-div";
     console.table(data)
-    //Create a CFDGraph
+    //Declare the states array for the cfd graph data
     const states = ['analysis_active', 'analysis_done', 'in_progress', 'dev_complete', 'verification_start', 'delivered'];
+    //Declare the states in  reversed order for the CFD (stacked area chart) to render correctly the areas
+    const reversedStates = [...states].reverse();
+    //Create a CFDGraph
     const cfdGraph = new CFDGraph(data, states);
     //Compute the dataset for a cfd graph
     const cfdGraphDataSet = cfdGraph.computeDataSet();
-    //Create a CFDRenderer
-    const cfdRenderer = new CFDRenderer(cfdGraphDataSet, states.reverse());
-    //Pass the created event bus to teh cfd graph
+    //Create a CFDRenderer with the reversed states
+    const cfdRenderer = new CFDRenderer(cfdGraphDataSet, reversedStates);
+    //Pass the created event bus to the cfd graph
     cfdRenderer.setupEventBus(eventBus);
     const reportingRangeDays = 0.75 * cfdGraphDataSet.length;
     if (document.querySelector(cfdGraphElementSelector)) {

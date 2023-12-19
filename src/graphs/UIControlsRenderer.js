@@ -18,8 +18,8 @@ export default class UIControlsRenderer extends Renderer {
 
   constructor(data) {
     super(data);
-    this.reportingRangeDays = localStorage.getItem('reportingRangeDays') || this.reportingRangeDays;
-    this.timeInterval = localStorage.getItem('timeInterval') || this.timeInterval;
+    // this.reportingRangeDays = localStorage.getItem('reportingRangeDays') || this.reportingRangeDays;
+    // this.timeInterval = localStorage.getItem('timeInterval') || this.timeInterval;
   }
 
   /**
