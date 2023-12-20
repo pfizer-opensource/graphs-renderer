@@ -82,13 +82,13 @@
                             <div class="grid grid-cols-2 gap-4">
                                 <!-- Avg. cycle time -->
                                 <div>
-                                    <label class="block text-black font-medium" for="average-cycle-time-input">Avg. cycle time</label>
-                                    <input
-                                            class="shadow appearance-none bg-gray-300 px-4 w-11/12 cursor-not-allowed border py-1 rounded text-blue-500 leading-tight focus:outline-none focus:shadow-outline"
-                                            id="average-cycle-time-input"
-                                            type="text"
-                                            readonly />
+                                    <label class="block text-black font-medium" for="cycle-times-select">Avg. cycle time-state</label>
+                                    <select
+                                            class="block appearance-none shadow bg-gray-300 px-4 w-11/12 cursor-pointer border py-1 rounded text-blue-500 leading-tight focus:outline-none focus:shadow-outline"
+                                            id="cycle-times-select">
+                                    </select>
                                 </div>
+
 
                                 <!-- Avg. lead time -->
                                 <div>
@@ -148,7 +148,7 @@
             </div>
         </div>
         <div class="h-full ml-8 -z-10" id="page-content">
-            <div class="mx-auto mt-6 w-10/12">
+            <div class="mx-auto mt-12 w-10/12">
                 <h1 class="my-2 text-center font-bold">CFD</h1>
                 <div id="cfd-area-div"></div>
                 <div id="cfd-brush-div"></div>
