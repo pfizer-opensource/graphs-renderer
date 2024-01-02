@@ -555,7 +555,9 @@ class CFDRenderer extends UIControlsRenderer {
       const cumulativeCountOfWorkItems = this.currentYScale.invert(yPosition);
       const excludeCycleTime = eventName === 'scatterplot-mousemove';
 
-      const metrics = this.#computeMetrics(date, Math.floor(cumulativeCountOfWorkItems), excludeCycleTime);
+      const metrics = this.computeMetrics(date, Math.floor(cumulativeCountOfWorkItems), excludeCycleTime);
+      this.#drawMetricLines(metrics.metricLinesData);
+      delete metrics.metricLinesData;
       const observation = this.observations?.data?.find((o) => o.chart_type === 'CFD' && areDatesEqual(o.date_from, date));
       const data = {
         date: date,
@@ -582,13 +584,12 @@ class CFDRenderer extends UIControlsRenderer {
 
   /**
    * Computes the CFD metrics for a given date and cumulative count.
-   * @private
    * @param {Date} currentDate - The current date for metrics computation.
    * @param {Number} currentCumulativeCount - The current cumulative count of items.
    * @param {Boolean} excludeCycleTime
    * @returns {Object} The computed metrics.
    */
-  #computeMetrics(currentDate, currentCumulativeCount, excludeCycleTime = false) {
+  computeMetrics(currentDate, currentCumulativeCount, excludeCycleTime = false) {
     currentDate = new Date(currentDate);
     currentDate.setHours(0, 0, 0, 0);
     const currentDataEntry = this.data.find((d) => areDatesEqual(new Date(d.date), currentDate));
@@ -623,16 +624,6 @@ class CFDRenderer extends UIControlsRenderer {
       const wip = noOfItemsAfter - noOfItemsBefore;
       const throughput = averageLeadTime ? parseFloat((wip / averageLeadTime).toFixed(1)) : undefined;
       excludeCycleTime && (averageCycleTime = null);
-      this.#drawMetricLines(
-        averageCycleTime,
-        averageLeadTime,
-        leadTimeDateBefore,
-        cycleTimeDateBefore,
-        currentDate,
-        currentStateCumulativeCount,
-        currentDataEntry
-      );
-
       return {
         currentState: this.states[currentStateIndex],
         wip,
@@ -640,6 +631,15 @@ class CFDRenderer extends UIControlsRenderer {
         biggestCycleTime,
         averageLeadTime,
         throughput,
+        metricLinesData: {
+          averageCycleTime,
+          averageLeadTime,
+          leadTimeDateBefore,
+          cycleTimeDateBefore,
+          currentDate,
+          currentStateCumulativeCount,
+          currentDataEntry,
+        },
       };
     }
     return {};
@@ -667,25 +667,25 @@ class CFDRenderer extends UIControlsRenderer {
 
   /**
    * Draws metric lines on the chart for average cycle time, lead time, and work-in-progress (WIP).
-   *
-   * @param {number|null} averageCycleTime - The average cycle time.
-   * @param {number|null} averageLeadTime - The average lead time.
-   * @param {Date|null} leadTimeDateBefore - The date before the current date for lead time computation.
-   * @param {Date|null} cycleTimeDateBefore - The date before the current date for cycle time computation.
-   * @param {Date} currentDate - The current date.
-   * @param {number} currentStateCumulativeCount - The cumulative count in the current state.
-   * @param {Object} currentDataEntry - The current data entry object.
+   * @param {Object} params - The parameters object.
+   * @param {number|null} params.averageCycleTime - The average cycle time.
+   * @param {number|null} params.averageLeadTime - The average lead time.
+   * @param {Date|null} params.leadTimeDateBefore - The date before the current date for lead time computation.
+   * @param {Date|null} params.cycleTimeDateBefore - The date before the current date for cycle time computation.
+   * @param {Date} params.currentDate - The current date.
+   * @param {number} params.currentStateCumulativeCount - The cumulative count in the current state.
+   * @param {Object} params.currentDataEntry - The current data entry object.
    * @private
    */
-  #drawMetricLines(
+  #drawMetricLines({
     averageCycleTime,
     averageLeadTime,
     leadTimeDateBefore,
     cycleTimeDateBefore,
     currentDate,
     currentStateCumulativeCount,
-    currentDataEntry
-  ) {
+    currentDataEntry,
+  }) {
     if (averageLeadTime) {
       this.#drawHorizontalMetricLine(leadTimeDateBefore, currentDate, currentDataEntry.delivered, 'lead-time-line', this.#leadTimeColor, 3);
     }
