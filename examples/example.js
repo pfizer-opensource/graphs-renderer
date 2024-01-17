@@ -91,12 +91,12 @@ async function renderGraphs(data, serviceId) {
             histogramRenderer.clearGraph(histogramGraphElementSelector);
         }
     }
-    await useObservationLogging(scatterplotRenderer, cfdRenderer, serviceId);
+    // await useObservationLogging(scatterplotRenderer, cfdRenderer, serviceId);
 }
 
 async function useObservationLogging(scatterplotRenderer, cfdRenderer, serviceId) {
-    const loggingServiceURL = "https://4njxsfgzvh.execute-api.us-east-1.amazonaws.com/v1"; //dev
-    const btoaToken = "cVJNd0d3WGJ0bXBETDIzN0VJR2tyZ1dib3BHS1dnUlZrMXd2M1RvN2hGV3I="; //dev
+    const loggingServiceURL = "";
+    const btoaToken = "";
    const observationLoggingService = new ObservationLoggingService(loggingServiceURL, btoaToken, serviceId);
     let observations = [];
     try {
