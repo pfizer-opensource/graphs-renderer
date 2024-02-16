@@ -23,17 +23,10 @@ if (!data || data.length === 0) {
     renderGraphs(data, serviceId);
 }
 
-async function renderGraphs(data, serviceId) {
-    //The Load and reset config input buttons css selectors
-    const loadConfigInputSelector = "#load-config-input";
-    const resetConfigInputSelector = "#reset-config-input";
-    //The controls div css selector that contains the reporting range days input and the x axis labeling units dropdown
-    const controlsElementSelector = "#controls-div";
-
+function renderCfdGraph(data, controlsElementSelector, loadConfigInputSelector, resetConfigInputSelector) {
     //The cfd area chart and brush window elements css selectors
     const cfdGraphElementSelector = "#cfd-area-div";
     const cfdBrushElementSelector = "#cfd-brush-div";
-    console.table(data)
     //Declare the states array for the cfd graph data
     const states = ['analysis_active', 'analysis_done', 'in_progress', 'dev_complete', 'verification_start', 'delivered'];
     //Declare the states in  reversed order for the CFD (stacked area chart) to render correctly the areas
@@ -60,7 +53,10 @@ async function renderGraphs(data, serviceId) {
             cfdRenderer.clearGraph(cfdGraphElementSelector, cfdBrushElementSelector);
         }
     }
+    return {cfdRenderer, reportingRangeDays};
+}
 
+function renderScatterplotAndHistogramGraphs(data, reportingRangeDays, controlsElementSelector, loadConfigInputSelector, resetConfigInputSelector) {
     //The scatterplot area chart, histogram area chart and scatterplot brush window elements css selectors
     const scatterplotGraphElementSelector = "#scatterplot-area-div";
     const histogramGraphElementSelector = "#histogram-area-div";
@@ -91,13 +87,29 @@ async function renderGraphs(data, serviceId) {
             histogramRenderer.clearGraph(histogramGraphElementSelector);
         }
     }
-    // await useObservationLogging(scatterplotRenderer, cfdRenderer, serviceId);
+    return scatterplotRenderer;
+}
+
+async function renderGraphs(data, serviceId) {
+    //The Load and reset config input buttons css selectors
+    const loadConfigInputSelector = "#load-config-input";
+    const resetConfigInputSelector = "#reset-config-input";
+    //The controls div css selector that contains the reporting range days input and the x axis labeling units dropdown
+    const controlsElementSelector = "#controls-div";
+
+    const {
+        cfdRenderer,
+        reportingRangeDays
+    } = renderCfdGraph(data, controlsElementSelector, loadConfigInputSelector, resetConfigInputSelector);
+    const scatterplotRenderer = renderScatterplotAndHistogramGraphs(data, reportingRangeDays, controlsElementSelector, loadConfigInputSelector, resetConfigInputSelector);
+    const useObservationLogging = false;
+    useObservationLogging && await useObservationLogging(scatterplotRenderer, cfdRenderer, serviceId);
 }
 
 async function useObservationLogging(scatterplotRenderer, cfdRenderer, serviceId) {
     const loggingServiceURL = "";
     const btoaToken = "";
-   const observationLoggingService = new ObservationLoggingService(loggingServiceURL, btoaToken, serviceId);
+    const observationLoggingService = new ObservationLoggingService(loggingServiceURL, btoaToken, serviceId);
     let observations = [];
     try {
         await observationLoggingService.loadObservations();
@@ -109,11 +121,11 @@ async function useObservationLogging(scatterplotRenderer, cfdRenderer, serviceId
     scatterplotRenderer.setupObservationLogging(observations);
     cfdRenderer.setupObservationLogging(observations);
     eventBus.addEventListener("scatterplot-click", (event) => {
-        initializeForm({ ...event, chartType: "SCATTERPLOT", serviceId });
+        initializeForm({...event, chartType: "SCATTERPLOT", serviceId});
         toggleRightSidebar(true);
     });
     eventBus.addEventListener("cfd-click", (event) => {
-        initializeForm({ ...event, chartType: "CFD", serviceId });
+        initializeForm({...event, chartType: "CFD", serviceId});
         toggleRightSidebar(true);
     });
     eventBus.addEventListener("submit-observation-form", async (observation) => {
@@ -139,7 +151,7 @@ async function useObservationLogging(scatterplotRenderer, cfdRenderer, serviceId
             }
         } catch (e) {
             warningField.textContent = "Error submitting the observation: " + e.message;
-            console.log( "Error submitting the observation: " + e.message);
+            console.log("Error submitting the observation: " + e.message);
         }
     });
 }

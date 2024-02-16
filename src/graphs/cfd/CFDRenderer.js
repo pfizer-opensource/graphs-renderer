@@ -598,25 +598,8 @@ class CFDRenderer extends UIControlsRenderer {
       const currentStateIndex = this.#getCurrentStateIndex(currentCumulativeCount, currentDataEntry);
       const currentDeliveredItems = currentDataEntry.delivered;
       const leadTimeDateBefore = this.#computeLeadTimeDate(currentDeliveredItems, filteredData);
-      let cycleTimeDateBefore = null;
-      let averageCycleTime = null;
-      let biggestCycleTime = 0;
-      let currentStateCumulativeCount = null;
-      let cycleTimesByState = {};
-      cycleTimesByState[this.states[0]] = 0;
-      for (let i = 0; i < this.states.length - 1; i++) {
-        let stateCumulativeCount = this.#getNoOfItems(currentDataEntry, this.states[i]);
-        let cycleTimeDate = this.#computeCycleTimeDate(stateCumulativeCount, i, filteredData);
-        cycleTimesByState[this.states[i + 1]] = cycleTimeDate ? Math.floor(calculateDaysBetweenDates(cycleTimeDate, currentDate)) : null;
-        if (cycleTimesByState[this.states[i + 1]] > biggestCycleTime) {
-          biggestCycleTime = cycleTimesByState[this.states[i + 1]];
-        }
-        if (currentStateIndex > 0 && i + 1 === currentStateIndex) {
-          cycleTimeDateBefore = cycleTimeDate;
-          averageCycleTime = cycleTimesByState[this.states[i + 1]];
-          currentStateCumulativeCount = stateCumulativeCount;
-        }
-      }
+      let { cycleTimeDateBefore, averageCycleTime, biggestCycleTime, currentStateCumulativeCount, cycleTimesByState } =
+        this.computeCycleTimeAndLeadTimeMetrics(currentDataEntry, filteredData, currentDate, currentStateIndex);
       const averageLeadTime = leadTimeDateBefore ? Math.floor(calculateDaysBetweenDates(leadTimeDateBefore, currentDate)) : null;
       const noOfItemsBefore = this.#getNoOfItems(currentDataEntry, this.states[this.states.indexOf('delivered')]);
       const noOfItemsAfter = this.#getNoOfItems(currentDataEntry, this.states[this.states.indexOf('analysis_active')]);
@@ -643,6 +626,29 @@ class CFDRenderer extends UIControlsRenderer {
       };
     }
     return {};
+  }
+
+  computeCycleTimeAndLeadTimeMetrics(currentDataEntry, filteredData, currentDate, currentStateIndex) {
+    let cycleTimeDateBefore = null;
+    let averageCycleTime = null;
+    let biggestCycleTime = 0;
+    let currentStateCumulativeCount = null;
+    let cycleTimesByState = {};
+    cycleTimesByState[this.states[0]] = 0;
+    for (let i = 0; i < this.states.length - 1; i++) {
+      let stateCumulativeCount = this.#getNoOfItems(currentDataEntry, this.states[i]);
+      let cycleTimeDate = this.#computeCycleTimeDate(stateCumulativeCount, i, filteredData);
+      cycleTimesByState[this.states[i + 1]] = cycleTimeDate ? Math.floor(calculateDaysBetweenDates(cycleTimeDate, currentDate)) : null;
+      if (cycleTimesByState[this.states[i + 1]] > biggestCycleTime) {
+        biggestCycleTime = cycleTimesByState[this.states[i + 1]];
+      }
+      if (currentStateIndex > 0 && i + 1 === currentStateIndex) {
+        cycleTimeDateBefore = cycleTimeDate;
+        averageCycleTime = cycleTimesByState[this.states[i + 1]];
+        currentStateCumulativeCount = stateCumulativeCount;
+      }
+    }
+    return { cycleTimeDateBefore, averageCycleTime, biggestCycleTime, currentStateCumulativeCount, cycleTimesByState };
   }
 
   #computeLeadTimeDate(currentDeliveredItems, filteredData) {

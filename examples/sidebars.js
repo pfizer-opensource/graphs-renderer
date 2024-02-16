@@ -133,37 +133,45 @@ function clearObservationForm() {
   chartTypeInput.value = "";
 }
 
+function initializeScatterplotForm(data) {
+  cfdDiv.classList.add("hidden");
+  scatterplotDiv.classList.remove("hidden");
+  workItemInput.value = data.ticketId || "";
+  leadTimeInput.value = data.metrics.leadTime ? data.metrics.leadTime + " days" : "-";
+}
+
+function initializeCfdForm(data) {
+  cfdDiv.classList.remove("hidden");
+  scatterplotDiv.classList.add("hidden");
+  let selectedState;
+  cycleTimesByState = data.metrics.cycleTimesByState
+  cycleTimesByStateSelect.innerHTML = ''
+  for (const state in data.metrics.cycleTimesByState) {
+    const option = document.createElement('option');
+    option.textContent = `${data.metrics.cycleTimesByState[state]} days - ${state}`;
+    option.value = state;
+    cycleTimesByStateSelect.appendChild(option);
+    if (data.metrics.cycleTimesByState[state] === data.metrics.biggestCycleTime) {
+      option.selected = true
+      selectedState = state
+    }
+  }
+  cycleTimesByStateSelect.addEventListener('change', (event) => {
+    cycleTimesByStateSelect.value = selectedState;
+  });
+  avgLeadTimeInput.value = data.metrics.averageLeadTime ? data.metrics.averageLeadTime + " days" : "-";
+  throughputInput.value = data.metrics.throughput ? data.metrics.throughput + " items" : "-";
+  wipInput.value = data.metrics.wip ? data.metrics.wip + " items" : "-";
+}
+
 export function initializeForm(data) {
 
   clearObservationForm();
   if (data.chartType === "CFD") {
-    cfdDiv.classList.remove("hidden");
-    scatterplotDiv.classList.add("hidden");
-    let selectedState;
-    cycleTimesByState = data.metrics.cycleTimesByState
-    cycleTimesByStateSelect.innerHTML=''
-    for (const state in data.metrics.cycleTimesByState) {
-      const option = document.createElement('option');
-      option.textContent = `${data.metrics.cycleTimesByState[state]} days - ${state}`;
-      option.value = state;
-      cycleTimesByStateSelect.appendChild(option);
-      if(data.metrics.cycleTimesByState[state] === data.metrics.biggestCycleTime){
-        option.selected = true
-        selectedState = state
-      }
-    }
-    cycleTimesByStateSelect.addEventListener('change', (event) => {
-      cycleTimesByStateSelect.value = selectedState;
-    });
-    avgLeadTimeInput.value = data.metrics.averageLeadTime ? data.metrics.averageLeadTime + " days" : "-";
-    throughputInput.value = data.metrics.throughput ? data.metrics.throughput + " items" : "-";
-    wipInput.value = data.metrics.wip ? data.metrics.wip + " items" : "-";
+    initializeCfdForm(data);
   }
   if (data.chartType === "SCATTERPLOT") {
-    cfdDiv.classList.add("hidden");
-    scatterplotDiv.classList.remove("hidden");
-    workItemInput.value = data.ticketId || "";
-    leadTimeInput.value = data.metrics.leadTime ? data.metrics.leadTime + " days" : "-";
+    initializeScatterplotForm(data);
   }
   dateInput.value = formatDateToNumeric(data.date);
   chartTypeInput.value = data.chartType;

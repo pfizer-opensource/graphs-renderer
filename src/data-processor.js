@@ -56,6 +56,5 @@ export function processServiceData(serviceData, removedRepos = [], removedTicket
     }
     dataSet = dataSet.filter((t) => t.indexes && !t.indexes.some((i) => i.name === 'ticket_type' && removedTicketTypes.includes(i.value)));
   }
-  // console.log(dataSet);
   return dataSet;
 }

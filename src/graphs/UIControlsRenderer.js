@@ -15,11 +15,14 @@ export default class UIControlsRenderer extends Renderer {
   brushGroup;
   brush;
   isManualBrushUpdate = true;
+  saveConfigsToBrowserStorage = false;
 
   constructor(data) {
     super(data);
-    // this.reportingRangeDays = localStorage.getItem('reportingRangeDays') || this.reportingRangeDays;
-    // this.timeInterval = localStorage.getItem('timeInterval') || this.timeInterval;
+    if (this.saveConfigsToBrowserStorage) {
+      this.reportingRangeDays = localStorage.getItem('reportingRangeDays') || this.reportingRangeDays;
+      this.timeInterval = localStorage.getItem('timeInterval') || this.timeInterval;
+    }
   }
 
   /**
