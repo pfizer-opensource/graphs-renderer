@@ -7,7 +7,7 @@ const graphsTestData =[
         "github_repo": "spell-parser",
         "in_progress": "1680864897",
         "verification_start": "1681136974",
-        "work_id": "TRON-12964"
+        "work_id": "T-91720964"
     },
     {
         "analysis_active": null,
@@ -17,7 +17,7 @@ const graphsTestData =[
         "github_repo": "spell-parser",
         "in_progress": "1686571850",
         "verification_start": "1686577654",
-        "work_id": "TRON-14861"
+        "work_id": "T-91740861"
     },
     {
         "analysis_active": "1681811131",
@@ -27,7 +27,7 @@ const graphsTestData =[
         "github_repo": "spell-parser",
         "in_progress": "1681811450",
         "verification_start": "1686237182",
-        "work_id": "TRON-14053"
+        "work_id": "T-91740053"
     },
     {
         "analysis_active": "1675779343",
@@ -37,7 +37,7 @@ const graphsTestData =[
         "github_repo": "spell-parsers-config",
         "in_progress": "1675686977",
         "verification_start": "1679411370",
-        "work_id": "TRON-13136"
+        "work_id": "T-91730136"
     },
     {
         "analysis_active": "1682607207",
@@ -47,7 +47,7 @@ const graphsTestData =[
         "github_repo": "spell-parsers-config",
         "in_progress": "1682607212",
         "verification_start": null,
-        "work_id": "TRON-14201"
+        "work_id": "T-91740201"
     },
     {
         "analysis_active": null,
@@ -57,7 +57,7 @@ const graphsTestData =[
         "github_repo": "spell-parsers-config",
         "in_progress": "1680709314",
         "verification_start": "1680780363",
-        "work_id": "TRON-13873"
+        "work_id": "T-91730873"
     },
     {
         "analysis_active": "1680527698",
@@ -67,7 +67,7 @@ const graphsTestData =[
         "github_repo": "spell-parsers-config",
         "in_progress": "1680527705",
         "verification_start": "1680700337",
-        "work_id": "TRON-13832"
+        "work_id": "T-91730832"
     },
     {
         "analysis_active": null,
@@ -77,7 +77,7 @@ const graphsTestData =[
         "github_repo": "spell-parsers-config",
         "in_progress": "1680186272",
         "verification_start": "1680621963",
-        "work_id": "TRON-13806"
+        "work_id": "T-91730806"
     },
     {
         "analysis_active": null,
@@ -87,7 +87,7 @@ const graphsTestData =[
         "github_repo": "spell-parsers-config",
         "in_progress": "1686225296",
         "verification_start": "1686305608",
-        "work_id": "TRON-14832"
+        "work_id": "T-91740832"
     },
     {
         "analysis_active": "1680608881",
@@ -97,7 +97,7 @@ const graphsTestData =[
         "github_repo": "spell-parsers-config",
         "in_progress": "1680608887",
         "verification_start": "1680620673",
-        "work_id": "TRON-13847"
+        "work_id": "T-91730847"
     }
 ]
 
