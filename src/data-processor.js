@@ -33,7 +33,7 @@
  *            "indexes": [],
  *            "tags": [],
  *            "verification_start": "timestamp",
- *            "work_id": "TRON-number"
+ *            "work_id": "Ticket-number"
  *         }
  *      ]
  *  }
