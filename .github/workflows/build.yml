@@ -1,4 +1,4 @@
-name: Lint and Prettier Check
+name: Automated tests
 on: [push, pull_request]
 
 jobs:
@@ -6,15 +6,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Use Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: '14'
+          node-version: '20'
 
       - name: Install Dependencies
         run: npm ci
 
       - name: Run linter
         run: npm run check
+
+      - name: Run tests
+        run: npm run test

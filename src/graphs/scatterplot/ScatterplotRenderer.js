@@ -32,7 +32,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
    *   {
    *     "delivered": "2023-01-09T15:12:03.000Z",
    *     "noOfDays": 3,
-   *     "ticketId": "TRON-12349"
+   *     "ticketId": "T-9125349"
    *   }
    * ];
    * @param workTicketsURL - The tickets base url
