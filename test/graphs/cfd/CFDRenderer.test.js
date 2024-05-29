@@ -16,6 +16,7 @@ describe('CFDRenderer', () => {
         //Act
         const metrics = cfdRenderer.computeMetrics(date,cumulativeCount);
         //Assert
-        expect(JSON.stringify(metrics)).toEqual(JSON.stringify(metricsOutput));
+        const normalizeJSON = (obj) => JSON.stringify(obj, Object.keys(obj).sort());
+        expect(normalizeJSON(metrics)).toEqual(normalizeJSON(metricsOutput));
     });
 });

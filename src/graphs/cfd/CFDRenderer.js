@@ -591,7 +591,7 @@ class CFDRenderer extends UIControlsRenderer {
    */
   computeMetrics(currentDate, currentCumulativeCount, excludeCycleTime = false) {
     currentDate = new Date(currentDate);
-    currentDate.setHours(0, 0, 0, 0);
+    currentDate.setUTCHours(0, 0, 0, 0);
     const currentDataEntry = this.data.find((d) => areDatesEqual(new Date(d.date), currentDate));
     if (currentDataEntry) {
       const filteredData = this.data.filter((d) => d.date <= currentDate).reverse();
@@ -605,7 +605,8 @@ class CFDRenderer extends UIControlsRenderer {
       const noOfItemsAfter = this.#getNoOfItems(currentDataEntry, this.states[this.states.indexOf('analysis_active')]);
 
       const wip = noOfItemsAfter - noOfItemsBefore;
-      const throughput = averageLeadTime ? parseFloat((wip / averageLeadTime).toFixed(1)) : undefined;
+      const throughput = averageLeadTime ? parseFloat((averageLeadTime / wip).toFixed(1)) : undefined;
+
       excludeCycleTime && (averageCycleTime = null);
       return {
         currentState: this.states[currentStateIndex],

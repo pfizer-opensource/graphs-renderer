@@ -33,7 +33,7 @@ class ScatterplotGraph {
    *     "indexes": [],
    *     "tags": [],
    *     "verification_start": "timestamp",
-   *     "work_id": "TRON-number"
+   *     "work_id": "T-number"
    *   }
    * ];
    */
@@ -56,7 +56,7 @@ class ScatterplotGraph {
    *   {
    *     "delivered": "2023-01-09T15:12:03.000Z",
    *     "noOfDays": 3,
-   *     "ticketId": "TRON-12349"
+   *     "ticketId": "T-9172349"
    *   }
    * ];
    */

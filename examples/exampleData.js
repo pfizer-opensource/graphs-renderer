@@ -15,7 +15,7 @@ export const exampleData = {
                     "name": "service", "value": "parser-infrastructure"
                 }],
                 "verification_start": "1680020338",
-                "work_id": "TRON-12876"
+                "work_id": "T-71828811"
             },
             {
                 "analysis_active": "1680804888",
@@ -29,7 +29,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1681136974",
-                "work_id": "TRON-12964"
+                "work_id": "T-718289222"
             },
             {
                 "analysis_active": null,
@@ -45,7 +45,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": null,
-                "work_id": "TRON-14596"
+                "work_id": "T-71848596"
             },
             {
                 "analysis_active": null,
@@ -59,7 +59,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1686577654",
-                "work_id": "TRON-14861"
+                "work_id": "T-71848861"
             },
             {
                 "analysis_active": "1681811131",
@@ -73,7 +73,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1686237182",
-                "work_id": "TRON-14053"
+                "work_id": "T-71848053"
             }],
     "spell-parsers-config":
         [
@@ -91,7 +91,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": null,
-                "work_id": "TRON-14302"
+                "work_id": "T-71848302"
             },
             {
                 "analysis_active": "1675779343",
@@ -105,7 +105,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1679411370",
-                "work_id": "TRON-13136"
+                "work_id": "T-71838136"
             },
             {
                 "analysis_active": "1682607207",
@@ -119,7 +119,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": null,
-                "work_id": "TRON-14201"
+                "work_id": "T-71848201"
             },
             {
                 "analysis_active": null,
@@ -133,7 +133,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1680780363",
-                "work_id": "TRON-13873"
+                "work_id": "T-71838873"
             },
             {
                 "analysis_active": "1680527698",
@@ -147,7 +147,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1680700337",
-                "work_id": "TRON-13832"
+                "work_id": "T-71838832"
             },
             {
                 "analysis_active": null,
@@ -161,7 +161,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1680621963",
-                "work_id": "TRON-13806"
+                "work_id": "T-71838806"
             },
             {
                 "analysis_active": null,
@@ -175,7 +175,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1686305608",
-                "work_id": "TRON-14832"
+                "work_id": "T-71848832"
             },
             {
                 "analysis_active": "1680608881",
@@ -189,7 +189,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1680620673",
-                "work_id": "TRON-13847"
+                "work_id": "T-71838847"
             },
             {
                 "analysis_active": null,
@@ -207,7 +207,7 @@ export const exampleData = {
                     "name": "service", "value": "parser-infrastructure"
                 }],
                 "verification_start": "1675344450",
-                "work_id": "TRON-11811"
+                "work_id": "T-71818811"
             },
             {
                 "analysis_active": null,
@@ -225,7 +225,7 @@ export const exampleData = {
                     "name": "service", "value": "parser-infrastructure"
                 }],
                 "verification_start": "1670337266",
-                "work_id": "TRON-12110"
+                "work_id": "T-71828110"
             },
             {
                 "analysis_active": "1677509505",
@@ -241,7 +241,7 @@ export const exampleData = {
                     "name": "service", "value": "spells-tools"
                 }],
                 "verification_start": "1677509809",
-                "work_id": "TRON-13463"
+                "work_id": "T-71838463"
             },
             {
                 "analysis_active": null,
@@ -255,7 +255,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1687391647",
-                "work_id": "TRON-15033"
+                "work_id": "T-71858033"
             },
             {
                 "analysis_active": null,
@@ -269,7 +269,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1683699264",
-                "work_id": "TRON-14417"
+                "work_id": "T-71848417"
             },
             {
                 "analysis_active": null,
@@ -283,7 +283,7 @@ export const exampleData = {
                     "name": "service", "value": "parser-infrastructure"
                 }],
                 "verification_start": null,
-                "work_id": "TRON-11830"
+                "work_id": "T-71818830"
             },
             {
                 "analysis_active": null,
@@ -297,7 +297,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1680708485",
-                "work_id": "TRON-13870"
+                "work_id": "T-71838870"
             },
             {
                 "analysis_active": "1680537948",
@@ -311,7 +311,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1680608417",
-                "work_id": "TRON-13844"
+                "work_id": "T-71838844"
             }
         ],
     "wizard-lambda":
@@ -330,7 +330,7 @@ export const exampleData = {
                     "name": "service", "value": "parser-infrastructure"
                 }],
                 "verification_start": "1675087145",
-                "work_id": "TRON-12070"
+                "work_id": "T-71828070"
             },
             {
                 "analysis_active": null,
@@ -344,7 +344,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1675777005",
-                "work_id": "TRON-13130"
+                "work_id": "T-71838130"
             },
             {
                 "analysis_active": null,
@@ -360,7 +360,7 @@ export const exampleData = {
                     "name": "service", "value": "parser-infrastructure"
                 }],
                 "verification_start": "1675087145",
-                "work_id": "TRON-11017"
+                "work_id": "T-71818017"
             },
             {
                 "analysis_active": null,
@@ -374,7 +374,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1680792708",
-                "work_id": "TRON-13885"
+                "work_id": "T-71838885"
             },
             {
                 "analysis_active": null,
@@ -390,7 +390,7 @@ export const exampleData = {
                     "name": "service", "value": "parser-infrastructure"
                 }],
                 "verification_start": "1673890621",
-                "work_id": "TRON-12515"
+                "work_id": "T-71828515"
             },
             {
                 "analysis_active": null,
@@ -406,7 +406,7 @@ export const exampleData = {
                     "name": "service", "value": "parser-infrastructure"
                 }],
                 "verification_start": null,
-                "work_id": "TRON-10784"
+                "work_id": "T-71808784"
             },
             {
                 "analysis_active": null,
@@ -420,7 +420,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1680089356",
-                "work_id": "TRON-13782"
+                "work_id": "T-71838782"
             },
             {
                 "analysis_active": null,
@@ -434,7 +434,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1683699333",
-                "work_id": "TRON-14418"
+                "work_id": "T-71848418"
             },
             {
                 "analysis_active": null,
@@ -446,7 +446,7 @@ export const exampleData = {
                 "indexes": [],
                 "tags": [],
                 "verification_start": "1669910344",
-                "work_id": "TRON-12475"
+                "work_id": "T-71828475"
             },
             {
                 "analysis_active": "1675698235",
@@ -460,7 +460,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1675947092",
-                "work_id": "TRON-13140"
+                "work_id": "T-71838140"
             },
             {
                 "analysis_active": null,
@@ -474,7 +474,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": null,
-                "work_id": "TRON-11179"
+                "work_id": "T-71818179"
             },
             {
                 "analysis_active": null,
@@ -488,7 +488,7 @@ export const exampleData = {
                 }],
                 "tags": [],
                 "verification_start": "1675687597",
-                "work_id": "TRON-12016"
+                "work_id": "T-71828016"
             },
             {
                 "analysis_active": null,
@@ -504,7 +504,7 @@ export const exampleData = {
                     "name": "service", "value": "parser-infrastructure"
                 }],
                 "verification_start": null,
-                "work_id": "TRON-10868"
+                "work_id": "T-71808868"
             },
             {
                 "analysis_active": null,
@@ -518,7 +518,7 @@ export const exampleData = {
                     "name": "service", "value": "wizard-request"
                 }],
                 "verification_start": null,
-                "work_id": "TRON-12457"
+                "work_id": "T-71828457"
             }
         ]
 }

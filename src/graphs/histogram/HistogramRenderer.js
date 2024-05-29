@@ -29,7 +29,7 @@ class HistogramRenderer extends Renderer {
    *   {
    *     "delivered": "2023-01-09T15:12:03.000Z",
    *     "noOfDays": 3,
-   *     "ticketId": "TRON-12349"
+   *     "ticketId": "T-9128349"
    *   }
    * ];
    * @param {Object} eventBus - event bus object for communicating with the other graphs through events
