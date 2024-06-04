@@ -61,20 +61,31 @@ class ScatterplotGraph {
    * ];
    */
   computeDataSet() {
-    return this.data
-      .filter((ticket) => ticket.delivered)
-      .map((ticket) => {
-        const deliveredDate = new Date(ticket.delivered * 1000);
-        const startDate = ticket.analysis_active || ticket.analysis_done;
-        const noOfDays = startDate ? calculateDaysBetweenDates(startDate, ticket.delivered) : 0;
-        deliveredDate.setHours(0, 0, 0, 0);
-        return {
-          delivered: deliveredDate,
-          noOfDays: noOfDays,
-          ticketId: ticket.work_id,
-        };
-      })
-      .sort((t1, t2) => t1.delivered - t2.delivered);
+      const dataSet = [];
+      this.data.forEach((ticket) => {
+          if (ticket.delivered) {
+              const deliveredDate = new Date(ticket.delivered * 1000);
+              deliveredDate.setUTCHours(0, 0, 0, 0);
+              const scatterplotTicket = {
+                  deliveredDate: deliveredDate,
+                  leadTime: 0,
+                  ticketId: ticket.work_id,
+              };
+              for (const state of this.states) {
+                  if (ticket[state]) {
+                      scatterplotTicket.leadTime = calculateDaysBetweenDates(ticket[state], ticket.delivered);
+                      break;
+                  }
+              }
+              if (scatterplotTicket.leadTime <= 0) {
+                  console.warn("Invalid lead time:", scatterplotTicket.leadTime, "Ticket has incorrect timestamps", ticket);
+                  return;
+              }
+              dataSet.push(scatterplotTicket);
+          }
+      });
+      dataSet.sort((t1, t2) => t1.deliveredDate - t2.deliveredDate);
+      return dataSet;
   }
 }
 

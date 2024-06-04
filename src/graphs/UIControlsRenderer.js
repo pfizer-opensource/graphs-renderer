@@ -16,6 +16,7 @@ export default class UIControlsRenderer extends Renderer {
   brush;
   isManualBrushUpdate = true;
   saveConfigsToBrowserStorage = false;
+  timeIntervalChangeEventName;
 
   constructor(data) {
     super(data);
@@ -49,47 +50,6 @@ export default class UIControlsRenderer extends Renderer {
         newTimeRange?.map((d) => this.x(d))
       );
     }
-  }
-
-  /**
-   * Sets up controls for selecting reporting range days and time intervals.
-   * @param {string} reportingRangeDaysSelector - DOM selector for reporting range days input.
-   * @param {string} timeIntervalSelector - DOM selector for time interval selection.
-   */
-  setupChartControls(reportingRangeDaysSelector, timeIntervalSelector) {
-    this.setupReportingRangeDays(reportingRangeDaysSelector);
-    this.setupTimeInterval(timeIntervalSelector);
-    this.brushSelector ? this.renderBrush() : this.updateGraph(this.selectedTimeRange);
-  }
-
-  /**
-   * Sets up the input control for selecting reporting range days.
-   * @param {string} reportingRangeDaysSelector - DOM selector for reporting range days input.
-   */
-  setupReportingRangeDays(reportingRangeDaysSelector) {
-    this.reportingRangeDaysInput = document.querySelector(reportingRangeDaysSelector);
-    this.reportingRangeDaysInput.value = this.reportingRangeDays;
-    this.selectedTimeRange ||= this.computeReportingRange(this.reportingRangeDays);
-    this.reportingRangeDaysInput.addEventListener('keypress', (event) => {
-      if (event.key === 'Enter') {
-        this.reportingRangeDays = event.target.value;
-        this.selectedTimeRange = this.computeReportingRange(this.reportingRangeDays);
-        this.brushSelector ? this.renderBrush() : this.updateGraph(this.selectedTimeRange);
-      }
-    });
-  }
-
-  /**
-   * Sets up the selection control for time intervals.
-   * @param {string} timeIntervalSelector - DOM selector for time interval selection.
-   */
-  setupTimeInterval(timeIntervalSelector) {
-    this.timeIntervalElement = document.querySelector(timeIntervalSelector);
-    this.timeIntervalElement.value = this.timeInterval;
-    this.timeIntervalElement.addEventListener('change', (event) => {
-      this.timeInterval = event.target.value;
-      this.drawXAxis(this.gx, this.x.copy().domain(this.selectedTimeRange), this.height, true);
-    });
   }
 
   /**
@@ -127,28 +87,6 @@ export default class UIControlsRenderer extends Renderer {
     });
   }
 
-  /**
-   * Sets the reporting range days.
-   * @param {number} reportingRangeDays - Number of days for the reporting range.
-   */
-  setReportingRangeDays(reportingRangeDays) {
-    this.reportingRangeDays = Math.floor(reportingRangeDays);
-    if (this.reportingRangeDaysInput) {
-      this.reportingRangeDaysInput.value = this.reportingRangeDays;
-    }
-  }
-
-  /**
-   * Sets the time interval for the chart.
-   * @param {string} timeInterval - Time interval units (days, weeks, months).
-   */
-  setTimeInterval(timeInterval) {
-    this.timeInterval = timeInterval;
-    if (this.timeIntervalElement) {
-      const option = Array.from(this.timeIntervalElement.options).find((o) => o.value === timeInterval);
-      option.selected = true;
-    }
-  }
 
   /**
    * Computes the reporting range for the chart based on the number of days.
@@ -180,25 +118,24 @@ export default class UIControlsRenderer extends Renderer {
     return [startDate, endDate];
   }
 
+
   /**
    * Creates and configures an x-axis based on the specified time interval.
    * The axis is created using D3.js and configured for different time intervals: days, weeks, or months.
    * @param {d3.ScaleTime} x - The D3 scale for the x-axis.
+   * @param timeInterval
    * @returns {d3.Axis} - The configured D3 axis for the x-axis.
    */
-  createXAxis(x) {
+  createXAxis(x, timeInterval = this.timeInterval) {
     let axis;
-    switch (this.timeInterval) {
+    switch (timeInterval) {
       case 'days':
         axis = d3
-          .axisBottom(x)
-          .tickArguments([d3.timeDay.every(1)])
-          .tickFormat((d) => {
-            const date = new Date(d);
-            if (date.getUTCDay() === 0) {
-              return d3.timeFormat('%a %d/%m')(date);
-            }
-          });
+            .axisBottom(x)
+            .ticks(d3.timeDay.every(1)) // label every 2 days
+            .tickFormat((d, i) => {
+              return i % 2 === 0 ? d3.timeFormat("%b %d")(d) : "";
+            });
         break;
       case 'weeks':
         axis = d3.axisBottom(x).ticks(d3.timeWeek);
@@ -217,35 +154,37 @@ export default class UIControlsRenderer extends Renderer {
    * This function changes the time interval state between days, weeks, and months,
    * and then redraws the x-axis based on the selected time range.
    */
-  handleXAxisClick() {
-    let timeInterval;
+  changeTimeInterval(isManualUpdate, chart) {
+    if (isManualUpdate) {
     switch (this.timeInterval) {
       case 'weeks':
-        timeInterval = 'months';
+        this.timeInterval = "months";
         break;
-      case 'months':
-        timeInterval = 'days';
+      case "months":
+        this.timeInterval = "days";
         break;
-      case 'days':
-        timeInterval = 'weeks';
+      case "days":
+        this.timeInterval = "weeks";
         break;
       default:
-        timeInterval = 'weeks';
+        this.timeInterval = "weeks";
     }
-    this.setTimeInterval(timeInterval);
-    this.drawXAxis(this.gx, this.x.copy().domain(this.selectedTimeRange), this.height, true);
+    } else {
+      this.timeInterval = this.determineTheAppropriateAxisLabels();
+    }
+    this.eventBus?.emitEvents(`change-time-interval-${chart}`, this.timeInterval);
   }
 
-  /**
-   * Sets up click listener for the X axis.
-   */
-  setupXAxisControl() {
-    this.gx.on('click', () => {
-      this.handleXAxisClick();
-      this.eventBus?.emitEvents(this.timeIntervalChangeEventName);
-      this.timeIntervalElement && (this.timeIntervalElement.value = this.timeInterval);
-    });
+  determineTheAppropriateAxisLabels() {
+    if (this.reportingRangeDays <= 31) {
+      return "days";
+    }
+    if (this.reportingRangeDays > 31 && this.reportingRangeDays <= 124) {
+      return "weeks";
+    }
+    return "months";
   }
+
 
   /**
    * Abstract method to render the brush. Must be implemented in subclasses.

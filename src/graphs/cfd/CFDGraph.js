@@ -73,11 +73,11 @@ class CFDGraph {
     const dataSet = [];
     const minDate = new Date(d3.min(this.data, (d) => d.delivered) * 1000);
     const maxDate = new Date(d3.max(this.data, (d) => d.delivered) * 1000);
-    minDate.setHours(0, 0, 0, 0);
-    maxDate.setHours(0, 0, 0, 0);
+    minDate.setUTCHours(0, 0, 0, 0);
+    maxDate.setUTCHours(0, 0, 0, 0);
     for (let date = minDate; date <= maxDate; date.setDate(date.getDate() + 1)) {
       const currentDate = new Date(date);
-      currentDate.setHours(0, 0, 0, 0);
+      currentDate.setUTCHours(0, 0, 0, 0);
       const currentTimestamp = currentDate.getTime() / 1000;
       const dataEntry = {
         date: currentDate,
@@ -105,8 +105,11 @@ class CFDGraph {
       if (!d[state]) {
         return false;
       }
-      const nextState = this.#getNextState(state);
-      if (!nextState) {
+      let nextState = this.#getNextState(state);
+      while (nextState !== null && !d[nextState]) {
+        nextState = this.#getNextState(nextState);
+      }
+      if (!d[nextState]) {
         return d[state] <= timestamp;
       }
       return d[state] <= timestamp && d[nextState] > timestamp;
