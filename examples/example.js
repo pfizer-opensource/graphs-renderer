@@ -43,7 +43,7 @@ function renderCfdGraph(data, controlsElementSelector, loadConfigInputSelector, 
     if (document.querySelector(cfdGraphElementSelector)) {
         if (cfdGraphDataSet.length > 0) {
             cfdRenderer.renderGraph(cfdGraphElementSelector);
-            cfdRenderer.setReportingRangeDays(reportingRangeDays);
+            cfdRenderer.reportingRangeDays = reportingRangeDays
             cfdRenderer.setupXAxisControl()
             cfdRenderer.enableMetrics()
             document.querySelector(cfdBrushElementSelector) && cfdRenderer.setupBrush(cfdBrushElementSelector);

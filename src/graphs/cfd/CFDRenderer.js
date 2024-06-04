@@ -77,6 +77,7 @@ class CFDRenderer extends UIControlsRenderer {
    * @param {string} graphElementSelector - Selector of the DOM element to render the graph.
    */
   renderGraph(graphElementSelector) {
+    this.graphElementSelector = graphElementSelector;
     this.#drawSvg(graphElementSelector);
     this.svg.append('g').attr('transform', `translate(${this.margin.left}, ${this.margin.top})`);
     this.#stackedData = this.#computeStackData();
@@ -112,6 +113,7 @@ class CFDRenderer extends UIControlsRenderer {
 
     const brushArea = this.#createAreaGenerator(this.x, this.y.copy().range([this.focusHeight - this.margin.top, 4]));
     this.#drawStackedAreaChart(svgBrush, this.#stackedData, brushArea);
+    this.changeTimeInterval(false, "cfd");
     this.drawXAxis(svgBrush.append('g'), this.x, this.focusHeight - this.margin.top);
     this.brushGroup = svgBrush.append('g');
     this.brushGroup.call(this.brush).call(
@@ -137,7 +139,7 @@ class CFDRenderer extends UIControlsRenderer {
    */
   updateGraph(domain) {
     const maxY = d3.max(this.#stackedData[this.#stackedData.length - 1], (d) => (d.data.date <= domain[1] ? d[1] : -1));
-    this.setReportingRangeDays(calculateDaysBetweenDates(domain[0], domain[1]));
+    this.reportingRangeDays = calculateDaysBetweenDates(domain[0], domain[1])
     this.currentXScale = this.x.copy().domain(domain);
     this.currentYScale = this.y.copy().domain([0, maxY]).nice();
     this.drawXAxis(this.gx, this.currentXScale, this.height);
@@ -176,7 +178,7 @@ class CFDRenderer extends UIControlsRenderer {
    */
   #drawArea() {
     this.chartArea = this.addClipPath(this.svg, 'cfd-clip');
-    this.chartArea.append('rect').attr('width', '100%').attr('height', '100%').attr('id', 'cfd-area').attr('fill', 'transparent');
+    // this.chartArea.append('rect').attr('width', '100%').attr('height', '100%').attr('id', 'cfd-area').attr('fill', 'transparent');
     const areaGenerator = this.#createAreaGenerator(this.x, this.y);
     this.#drawStackedAreaChart(this.chartArea, this.#stackedData, areaGenerator);
     this.#drawLegend();
@@ -276,6 +278,17 @@ class CFDRenderer extends UIControlsRenderer {
     this.drawXAxis(this.gx, this.x, this.height, true);
     this.drawYAxis(this.gy, this.y);
     this.drawAxesLabels(this.svg, this.xAxisLabel, this.yAxisLabel);
+  }
+
+  /**
+   * Sets up click listener for the X axis.
+   */
+  setupXAxisControl() {
+    this.gx.on('click', () => {
+      this.changeTimeInterval(true, "cfd");
+      this.drawXAxis(this.gx, this.x.copy().domain(this.selectedTimeRange), this.height, true);
+
+    });
   }
 
   /**
@@ -386,7 +399,7 @@ class CFDRenderer extends UIControlsRenderer {
       .attr('d', trianglePath)
       .attr('transform', (d) => {
         const date = new Date(d.date_from);
-        date.setHours(0, 0, 0, 0);
+        date.setUTCHours(0, 0, 0, 0);
         return `translate(${this.currentXScale(date)}, ${this.height})`;
       })
       .style('fill', 'black');
@@ -402,10 +415,12 @@ class CFDRenderer extends UIControlsRenderer {
    * @private
    */
   #showTooltipAndMovingLine(event) {
-    !this.tooltip && this.#createTooltipAndMovingLine();
+    !this.tooltip && this.#createTooltipAndMovingLine(event.lineX, event.lineY);
     const tooltipWidth = this.tooltip.node().getBoundingClientRect().width;
+    const cfdGraphRect = d3.select(this.graphElementSelector).node().getBoundingClientRect();
+    const tooltipTop = window.scrollY + cfdGraphRect.top - 50;
     this.#clearTooltipAndMovingLine(event.lineX, event.lineY);
-    this.#positionTooltip(event.tooltipLeft, 0, tooltipWidth);
+    this.#positionTooltip(event.tooltipLeft, tooltipTop, tooltipWidth);
     this.#populateTooltip(event);
   }
 
@@ -424,9 +439,9 @@ class CFDRenderer extends UIControlsRenderer {
    * Creates a tooltip and a moving line for the chart used for the metrics and observation logging.
    * @private
    */
-  #createTooltipAndMovingLine() {
+  #createTooltipAndMovingLine(x,y) {
     this.tooltip = d3.select('body').append('div').attr('class', styles.tooltip).attr('id', 'c-tooltip').style('opacity', 0);
-    this.cfdLine = this.chartArea.append('line').attr('id', 'cfd-line').attr('stroke', 'black').style('display', 'none');
+    this.cfdLine = this.chartArea.append('line').attr('id', 'cfd-line').attr('stroke', 'black').attr('y1', 0).attr('y2', y).attr('x1', x).attr('x2', x).style('display', 'none');
   }
 
   /**
@@ -449,65 +464,56 @@ class CFDRenderer extends UIControlsRenderer {
   #populateTooltip(event) {
     this.tooltip?.append('p').text(formatDateToLocalString(event.date)).attr('class', 'text-center');
     const gridContainer = this.tooltip?.append('div').attr('class', 'grid grid-cols-2');
-    if (event.metrics.throughput > 0) {
-      gridContainer.append('span').text('Throughput:').attr('class', 'pr-1').style('text-align', 'start');
-      gridContainer.append('span').text(`${event.metrics.throughput} items`).attr('class', 'pl-1').style('text-align', 'start');
-    }
-    if (event.metrics.wip > 0) {
-      gridContainer.append('span').text('WIP:').attr('class', 'pr-1').style('text-align', 'start').style('color', this.#wipColor);
+    if (event.metrics.averageCycleTime > 0) {
       gridContainer
-        .append('span')
-        .text(`${event.metrics.wip} items`)
-        .attr('class', 'pl-1')
-        .style('text-align', 'start')
-        .style('color', this.#wipColor);
+          .append("span")
+          .text("Cycle time:")
+          .attr("class", "pr-1")
+          .style("text-align", "start")
+          .style("color", this.#cycleTimeColor);
+      gridContainer
+          .append("span")
+          .text(`${event.metrics.averageCycleTime} days`)
+          .attr("class", "pl-1")
+          .style("text-align", "start")
+          .style("color", this.#cycleTimeColor);
     }
     if (event.metrics.averageLeadTime > 0) {
       gridContainer
-        .append('span')
-        .text('Lead time:')
-        .attr('class', 'pr-1')
-        .style('text-align', 'start')
-        .style('color', this.#leadTimeColor);
+          .append("span")
+          .text("Lead time:")
+          .attr("class", "pr-1")
+          .style("text-align", "start")
+          .style("color", this.#leadTimeColor);
       gridContainer
-        .append('span')
-        .text(`${event.metrics.averageLeadTime} days`)
-        .attr('class', 'pl-1')
-        .style('text-align', 'start')
-        .style('color', this.#leadTimeColor);
+          .append("span")
+          .text(`${event.metrics.averageLeadTime} days`)
+          .attr("class", "pl-1")
+          .style("text-align", "start")
+          .style("color", this.#leadTimeColor);
     }
-    if (event.metrics.averageCycleTime > 0) {
+    if (event.metrics.wip > 0) {
+      gridContainer.append("span").text("WIP:").attr("class", "pr-1").style("text-align", "start").style("color", this.#wipColor);
       gridContainer
-        .append('span')
-        .text('Cycle time:')
-        .attr('class', 'pr-1')
-        .style('text-align', 'start')
-        .style('color', this.#cycleTimeColor);
-      gridContainer
-        .append('span')
-        .text(`${event.metrics.averageCycleTime} days`)
-        .attr('class', 'pl-1')
-        .style('text-align', 'start')
-        .style('color', this.#cycleTimeColor);
+          .append("span")
+          .text(`${event.metrics.wip} items`)
+          .attr("class", "pl-1")
+          .style("text-align", "start")
+          .style("color", this.#wipColor);
     }
-    if (event.metrics.currentState) {
-      gridContainer
-        .append('span')
-        .text('State:')
-        .attr('class', 'pr-1')
-        .style('text-align', 'start')
-        .style('color', this.#statesColors(event.metrics.currentState));
-      gridContainer
-        .append('span')
-        .text(`${event.metrics.currentState}`)
-        .attr('class', 'pl-1')
-        .style('text-align', 'start')
-        .style('color', this.#statesColors(event.metrics.currentState));
+    if (event.metrics.throughput > 0) {
+      gridContainer.append("span").text("Throughput:").attr("class", "pr-1").style("text-align", "start");
+      gridContainer.append("span").text(`${event.metrics.throughput} items`).attr("class", "pl-1").style("text-align", "start");
     }
     if (event.observationBody) {
-      gridContainer.append('span').text('Observation:').attr('class', 'pr-1').style('text-align', 'start');
-      gridContainer.append('span').text(`${event.observationBody}`).attr('class', 'pl-1').style('text-align', 'start');
+      gridContainer.append("span").text("Observation:").attr("class", "pr-1").style("text-align", "start");
+      gridContainer
+          .append("span")
+          .text(`${event.observationBody.substring(0, 15)}...`)
+          .attr("class", "pl-1")
+          .style("text-align", "start");
     }
+
   }
 
   /**
@@ -605,7 +611,7 @@ class CFDRenderer extends UIControlsRenderer {
       const noOfItemsAfter = this.#getNoOfItems(currentDataEntry, this.states[this.states.indexOf('analysis_active')]);
 
       const wip = noOfItemsAfter - noOfItemsBefore;
-      const throughput = averageLeadTime ? parseFloat((averageLeadTime / wip).toFixed(1)) : undefined;
+      const throughput = averageLeadTime ? parseFloat((wip/averageLeadTime).toFixed(1)) : undefined;
 
       excludeCycleTime && (averageCycleTime = null);
       return {
