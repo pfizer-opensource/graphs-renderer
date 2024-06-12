@@ -3,8 +3,8 @@ import {
     CFDGraph,
     CFDRenderer,
     ScatterplotGraph,
-    ScatterplotRenderer,
     HistogramRenderer,
+    ScatterplotRenderer,
     ObservationLoggingService,
     processServiceData,
     eventBus
@@ -47,7 +47,6 @@ function renderCfdGraph(data, controlsElementSelector, loadConfigInputSelector, 
             cfdRenderer.setupXAxisControl()
             cfdRenderer.enableMetrics()
             document.querySelector(cfdBrushElementSelector) && cfdRenderer.setupBrush(cfdBrushElementSelector);
-            document.querySelector(controlsElementSelector) && cfdRenderer.setupChartControls("#reporting-range-input", "#range-increments-select");
             document.querySelector(loadConfigInputSelector) && cfdRenderer.setupConfigLoader(loadConfigInputSelector, resetConfigInputSelector);
         } else {
             cfdRenderer.clearGraph(cfdGraphElementSelector, cfdBrushElementSelector);
@@ -64,7 +63,7 @@ function renderScatterplotAndHistogramGraphs(data, reportingRangeDays, controlsE
     const scatterplotBrushElementSelector = "#scatterplot-brush-div";
     //Create a ScatterplotGraph
     const scatterplotGraph = new ScatterplotGraph(data);
-    //Compute the dataset for the scatterplot and histogram graphs
+    // //Compute the dataset for the scatterplot and histogram graphs
     const leadTimeDataSet = scatterplotGraph.computeDataSet(data);
     //Create a ScatterplotRenderer
     const scatterplotRenderer = new ScatterplotRenderer(leadTimeDataSet, baseJiraURL);
@@ -80,7 +79,6 @@ function renderScatterplotAndHistogramGraphs(data, reportingRangeDays, controlsE
             scatterplotRenderer.enableMetrics()
             document.querySelector(histogramGraphElementSelector) && histogramRenderer.renderGraph(histogramGraphElementSelector);
             document.querySelector(scatterplotBrushElementSelector) && scatterplotRenderer.setupBrush(scatterplotBrushElementSelector);
-            document.querySelector(controlsElementSelector) && scatterplotRenderer.setupChartControls("#reporting-range-input", "#range-increments-select");
             document.querySelector(loadConfigInputSelector) && scatterplotRenderer.setupConfigLoader(loadConfigInputSelector, resetConfigInputSelector);
         } else {
             scatterplotRenderer.clearGraph(scatterplotGraphElementSelector, scatterplotBrushElementSelector);
@@ -102,8 +100,8 @@ async function renderGraphs(data, serviceId) {
         reportingRangeDays
     } = renderCfdGraph(data, controlsElementSelector, loadConfigInputSelector, resetConfigInputSelector);
     const scatterplotRenderer = renderScatterplotAndHistogramGraphs(data, reportingRangeDays, controlsElementSelector, loadConfigInputSelector, resetConfigInputSelector);
-    const useObservationLogging = false;
-    useObservationLogging && await useObservationLogging(scatterplotRenderer, cfdRenderer, serviceId);
+    // const useObservationLogging = false;
+    // useObservationLogging && await useObservationLogging(scatterplotRenderer, cfdRenderer, serviceId);
 }
 
 async function useObservationLogging(scatterplotRenderer, cfdRenderer, serviceId) {

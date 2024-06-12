@@ -49,7 +49,7 @@ class CFDRenderer extends UIControlsRenderer {
    *   }
    * ];
    */
-  constructor(data, states = ['analysis_active', 'analysis_done', 'in_progress', 'dev_complete', 'verification_start', 'delivered']) {
+  constructor(data, states) {
     super(data);
     this.states = states;
     this.#statesColors = d3.scaleOrdinal().domain(this.states).range(this.#colorPalette);
@@ -142,7 +142,8 @@ class CFDRenderer extends UIControlsRenderer {
     this.reportingRangeDays = calculateDaysBetweenDates(domain[0], domain[1])
     this.currentXScale = this.x.copy().domain(domain);
     this.currentYScale = this.y.copy().domain([0, maxY]).nice();
-    this.drawXAxis(this.gx, this.currentXScale, this.height);
+    this.changeTimeInterval(false, "cfd");
+    this.drawXAxis(this.gx, this.currentXScale, this.height,true);
     this.drawYAxis(this.gy, this.currentYScale);
 
     this.chartArea
@@ -178,7 +179,7 @@ class CFDRenderer extends UIControlsRenderer {
    */
   #drawArea() {
     this.chartArea = this.addClipPath(this.svg, 'cfd-clip');
-    // this.chartArea.append('rect').attr('width', '100%').attr('height', '100%').attr('id', 'cfd-area').attr('fill', 'transparent');
+    this.chartArea.append('rect').attr('width', '100%').attr('height', '100%').attr('id', 'cfd-area').attr('fill', 'transparent');
     const areaGenerator = this.#createAreaGenerator(this.x, this.y);
     this.#drawStackedAreaChart(this.chartArea, this.#stackedData, areaGenerator);
     this.#drawLegend();
@@ -323,7 +324,7 @@ class CFDRenderer extends UIControlsRenderer {
    * @param isGraph
    */
   drawXAxis(g, x, height = this.height, isGraph = false) {
-    const axis = this.createXAxis(x);
+    let axis;
     const clipId = 'cfd-x-axis-clip';
     this.svg
       .append('clipPath')
@@ -334,6 +335,7 @@ class CFDRenderer extends UIControlsRenderer {
       .attr('width', this.width)
       .attr('height', this.height);
     if (isGraph) {
+      axis = this.createXAxis(x);
       const axisGroup = g.call(axis).attr('transform', `translate(0, ${height})`);
       const axisPath = axisGroup
         .selectAll('path')
@@ -353,6 +355,7 @@ class CFDRenderer extends UIControlsRenderer {
       g.selectAll('text').attr('y', 30).style('fill', 'black');
       g.attr('clip-path', `url(#${clipId})`);
     } else {
+      axis = this.createXAxis(x, "months");
       g.call(axis).attr('transform', `translate(0, ${height})`);
     }
   }
@@ -554,10 +557,25 @@ class CFDRenderer extends UIControlsRenderer {
   #handleMouseEvent(event, eventName) {
     if (this.#areMetricsEnabled) {
       this.#removeMetricsLines();
-      const coords = d3.pointer(event, d3.select('#cfd-area').node()); // Get the mouse x-position
+      const coords = d3.pointer(event, d3.select('#cfd-area').node());
       const xPosition = coords[0];
       const yPosition = coords[1];
+
+      // Debug logs
+      // console.log("coords:", coords);
+      // console.log("xPosition:", xPosition, "yPosition:", yPosition);
+      // console.log("currentXScale domain:", this.currentXScale.domain());
+      // console.log("currentXScale range:", this.currentXScale.range());
+
+      // Ensure xPosition is within the chart's range
+      if (xPosition < 0 || xPosition > this.width) {
+        console.log("xPosition out of bounds:", xPosition);
+        return;
+      }
+
       const date = this.currentXScale.invert(xPosition);
+      // console.log("pointer", date, event, coords);
+
       const cumulativeCountOfWorkItems = this.currentYScale.invert(yPosition);
       const excludeCycleTime = eventName === 'scatterplot-mousemove';
 
@@ -597,7 +615,7 @@ class CFDRenderer extends UIControlsRenderer {
    */
   computeMetrics(currentDate, currentCumulativeCount, excludeCycleTime = false) {
     currentDate = new Date(currentDate);
-    currentDate.setUTCHours(0, 0, 0, 0);
+    // currentDate.setUTCHours(0, 0, 0, 0);
     const currentDataEntry = this.data.find((d) => areDatesEqual(new Date(d.date), currentDate));
     if (currentDataEntry) {
       const filteredData = this.data.filter((d) => d.date <= currentDate).reverse();

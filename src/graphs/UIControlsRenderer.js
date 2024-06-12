@@ -127,9 +127,10 @@ export default class UIControlsRenderer extends Renderer {
    * @returns {d3.Axis} - The configured D3 axis for the x-axis.
    */
   createXAxis(x, timeInterval = this.timeInterval) {
+    console.log("time interval", this.timeInterval)
     let axis;
     switch (timeInterval) {
-      case 'days':
+      case "days":
         axis = d3
             .axisBottom(x)
             .ticks(d3.timeDay.every(1)) // label every 2 days
@@ -137,14 +138,14 @@ export default class UIControlsRenderer extends Renderer {
               return i % 2 === 0 ? d3.timeFormat("%b %d")(d) : "";
             });
         break;
-      case 'weeks':
+      case "weeks":
         axis = d3.axisBottom(x).ticks(d3.timeWeek);
         break;
-      case 'months':
+      case "months":
         axis = d3.axisBottom(x).ticks(d3.timeMonth);
         break;
       default:
-        axis = d3.axisBottom(x);
+        return d3.axisBottom(x);
     }
     return axis;
   }
@@ -155,6 +156,8 @@ export default class UIControlsRenderer extends Renderer {
    * and then redraws the x-axis based on the selected time range.
    */
   changeTimeInterval(isManualUpdate, chart) {
+    // console.log("this.timeInterval", this.timeInterval)
+
     if (isManualUpdate) {
     switch (this.timeInterval) {
       case 'weeks':
@@ -176,6 +179,7 @@ export default class UIControlsRenderer extends Renderer {
   }
 
   determineTheAppropriateAxisLabels() {
+    // console.log("this.reportingRangeDays", this.reportingRangeDays)
     if (this.reportingRangeDays <= 31) {
       return "days";
     }
