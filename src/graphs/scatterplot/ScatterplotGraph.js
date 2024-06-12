@@ -37,10 +37,10 @@ class ScatterplotGraph {
    *   }
    * ];
    */
-  constructor(data) {
-    this.data = data;
+  constructor(data, states = ["analysis_active", "analysis_done", "in_progress", "dev_complete", "verification_start", "delivered"]) {
+      this.data = data;
+      this.states = states;
   }
-
   /**
    * Computes the dataSet for the Scatterplot and Histogram graphs.
    *
@@ -65,12 +65,13 @@ class ScatterplotGraph {
       this.data.forEach((ticket) => {
           if (ticket.delivered) {
               const deliveredDate = new Date(ticket.delivered * 1000);
-              deliveredDate.setUTCHours(0, 0, 0, 0);
+              deliveredDate.setHours(0, 0, 0, 0);
               const scatterplotTicket = {
                   deliveredDate: deliveredDate,
                   leadTime: 0,
                   ticketId: ticket.work_id,
               };
+              console.log(scatterplotTicket)
               for (const state of this.states) {
                   if (ticket[state]) {
                       scatterplotTicket.leadTime = calculateDaysBetweenDates(ticket[state], ticket.delivered);
