@@ -65,8 +65,9 @@ class CFDRenderer extends UIControlsRenderer {
     this.eventBus?.addEventListener('change-time-range-scatterplot', this.updateBrushSelection.bind(this));
     this.eventBus?.addEventListener('scatterplot-mousemove', (event) => this.#handleMouseEvent(event, 'scatterplot-mousemove'));
     this.eventBus?.addEventListener('scatterplot-mouseleave', () => this.hideTooltipAndMovingLine());
-    this.eventBus?.addEventListener('change-time-interval-scatterplot', () => {
-      this.handleXAxisClick();
+    this.eventBus?.addEventListener('change-time-interval-scatterplot', (timeInterval) => {
+      this.timeInterval = timeInterval;
+      this.drawXAxis(this.gx, this.x.copy().domain(this.selectedTimeRange), this.height, true);
     });
   }
 
@@ -113,7 +114,7 @@ class CFDRenderer extends UIControlsRenderer {
 
     const brushArea = this.#createAreaGenerator(this.x, this.y.copy().range([this.focusHeight - this.margin.top, 4]));
     this.#drawStackedAreaChart(svgBrush, this.#stackedData, brushArea);
-    this.changeTimeInterval(false, "cfd");
+    this.changeTimeInterval(false, 'cfd');
     this.drawXAxis(svgBrush.append('g'), this.x, this.focusHeight - this.margin.top);
     this.brushGroup = svgBrush.append('g');
     this.brushGroup.call(this.brush).call(
@@ -139,11 +140,11 @@ class CFDRenderer extends UIControlsRenderer {
    */
   updateGraph(domain) {
     const maxY = d3.max(this.#stackedData[this.#stackedData.length - 1], (d) => (d.data.date <= domain[1] ? d[1] : -1));
-    this.reportingRangeDays = calculateDaysBetweenDates(domain[0], domain[1])
+    this.reportingRangeDays = calculateDaysBetweenDates(domain[0], domain[1]);
     this.currentXScale = this.x.copy().domain(domain);
     this.currentYScale = this.y.copy().domain([0, maxY]).nice();
-    this.changeTimeInterval(false, "cfd");
-    this.drawXAxis(this.gx, this.currentXScale, this.height,true);
+    this.changeTimeInterval(false, 'cfd');
+    this.drawXAxis(this.gx, this.currentXScale, this.height, true);
     this.drawYAxis(this.gy, this.currentYScale);
 
     this.chartArea
@@ -286,9 +287,8 @@ class CFDRenderer extends UIControlsRenderer {
    */
   setupXAxisControl() {
     this.gx.on('click', () => {
-      this.changeTimeInterval(true, "cfd");
+      this.changeTimeInterval(true, 'cfd');
       this.drawXAxis(this.gx, this.x.copy().domain(this.selectedTimeRange), this.height, true);
-
     });
   }
 
@@ -355,7 +355,7 @@ class CFDRenderer extends UIControlsRenderer {
       g.selectAll('text').attr('y', 30).style('fill', 'black');
       g.attr('clip-path', `url(#${clipId})`);
     } else {
-      axis = this.createXAxis(x, "months");
+      axis = this.createXAxis(x, 'months');
       g.call(axis).attr('transform', `translate(0, ${height})`);
     }
   }
@@ -442,9 +442,17 @@ class CFDRenderer extends UIControlsRenderer {
    * Creates a tooltip and a moving line for the chart used for the metrics and observation logging.
    * @private
    */
-  #createTooltipAndMovingLine(x,y) {
+  #createTooltipAndMovingLine(x, y) {
     this.tooltip = d3.select('body').append('div').attr('class', styles.tooltip).attr('id', 'c-tooltip').style('opacity', 0);
-    this.cfdLine = this.chartArea.append('line').attr('id', 'cfd-line').attr('stroke', 'black').attr('y1', 0).attr('y2', y).attr('x1', x).attr('x2', x).style('display', 'none');
+    this.cfdLine = this.chartArea
+      .append('line')
+      .attr('id', 'cfd-line')
+      .attr('stroke', 'black')
+      .attr('y1', 0)
+      .attr('y2', y)
+      .attr('x1', x)
+      .attr('x2', x)
+      .style('display', 'none');
   }
 
   /**
@@ -469,54 +477,53 @@ class CFDRenderer extends UIControlsRenderer {
     const gridContainer = this.tooltip?.append('div').attr('class', 'grid grid-cols-2');
     if (event.metrics.averageCycleTime > 0) {
       gridContainer
-          .append("span")
-          .text("Cycle time:")
-          .attr("class", "pr-1")
-          .style("text-align", "start")
-          .style("color", this.#cycleTimeColor);
+        .append('span')
+        .text('Cycle time:')
+        .attr('class', 'pr-1')
+        .style('text-align', 'start')
+        .style('color', this.#cycleTimeColor);
       gridContainer
-          .append("span")
-          .text(`${event.metrics.averageCycleTime} days`)
-          .attr("class", "pl-1")
-          .style("text-align", "start")
-          .style("color", this.#cycleTimeColor);
+        .append('span')
+        .text(`${event.metrics.averageCycleTime} days`)
+        .attr('class', 'pl-1')
+        .style('text-align', 'start')
+        .style('color', this.#cycleTimeColor);
     }
     if (event.metrics.averageLeadTime > 0) {
       gridContainer
-          .append("span")
-          .text("Lead time:")
-          .attr("class", "pr-1")
-          .style("text-align", "start")
-          .style("color", this.#leadTimeColor);
+        .append('span')
+        .text('Lead time:')
+        .attr('class', 'pr-1')
+        .style('text-align', 'start')
+        .style('color', this.#leadTimeColor);
       gridContainer
-          .append("span")
-          .text(`${event.metrics.averageLeadTime} days`)
-          .attr("class", "pl-1")
-          .style("text-align", "start")
-          .style("color", this.#leadTimeColor);
+        .append('span')
+        .text(`${event.metrics.averageLeadTime} days`)
+        .attr('class', 'pl-1')
+        .style('text-align', 'start')
+        .style('color', this.#leadTimeColor);
     }
     if (event.metrics.wip > 0) {
-      gridContainer.append("span").text("WIP:").attr("class", "pr-1").style("text-align", "start").style("color", this.#wipColor);
+      gridContainer.append('span').text('WIP:').attr('class', 'pr-1').style('text-align', 'start').style('color', this.#wipColor);
       gridContainer
-          .append("span")
-          .text(`${event.metrics.wip} items`)
-          .attr("class", "pl-1")
-          .style("text-align", "start")
-          .style("color", this.#wipColor);
+        .append('span')
+        .text(`${event.metrics.wip} items`)
+        .attr('class', 'pl-1')
+        .style('text-align', 'start')
+        .style('color', this.#wipColor);
     }
     if (event.metrics.throughput > 0) {
-      gridContainer.append("span").text("Throughput:").attr("class", "pr-1").style("text-align", "start");
-      gridContainer.append("span").text(`${event.metrics.throughput} items`).attr("class", "pl-1").style("text-align", "start");
+      gridContainer.append('span').text('Throughput:').attr('class', 'pr-1').style('text-align', 'start');
+      gridContainer.append('span').text(`${event.metrics.throughput} items`).attr('class', 'pl-1').style('text-align', 'start');
     }
     if (event.observationBody) {
-      gridContainer.append("span").text("Observation:").attr("class", "pr-1").style("text-align", "start");
+      gridContainer.append('span').text('Observation:').attr('class', 'pr-1').style('text-align', 'start');
       gridContainer
-          .append("span")
-          .text(`${event.observationBody.substring(0, 15)}...`)
-          .attr("class", "pl-1")
-          .style("text-align", "start");
+        .append('span')
+        .text(`${event.observationBody.substring(0, 15)}...`)
+        .attr('class', 'pl-1')
+        .style('text-align', 'start');
     }
-
   }
 
   /**
@@ -569,7 +576,7 @@ class CFDRenderer extends UIControlsRenderer {
 
       // Ensure xPosition is within the chart's range
       if (xPosition < 0 || xPosition > this.width) {
-        console.log("xPosition out of bounds:", xPosition);
+        console.log('xPosition out of bounds:', xPosition);
         return;
       }
 
@@ -629,7 +636,7 @@ class CFDRenderer extends UIControlsRenderer {
       const noOfItemsAfter = this.#getNoOfItems(currentDataEntry, this.states[this.states.indexOf('analysis_active')]);
 
       const wip = noOfItemsAfter - noOfItemsBefore;
-      const throughput = averageLeadTime ? parseFloat((wip/averageLeadTime).toFixed(1)) : undefined;
+      const throughput = averageLeadTime ? parseFloat((wip / averageLeadTime).toFixed(1)) : undefined;
 
       excludeCycleTime && (averageCycleTime = null);
       return {

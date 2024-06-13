@@ -11,7 +11,7 @@ const metricsOutput = {
     },
     "biggestCycleTime": 2,
     "averageLeadTime": 3,
-    "throughput": 3,
+    "throughput": 0.3,
     "metricLinesData": {
         "averageCycleTime": null,
         "averageLeadTime": 3,

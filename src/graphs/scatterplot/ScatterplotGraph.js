@@ -37,9 +37,9 @@ class ScatterplotGraph {
    *   }
    * ];
    */
-  constructor(data, states = ["analysis_active", "analysis_done", "in_progress", "dev_complete", "verification_start", "delivered"]) {
-      this.data = data;
-      this.states = states;
+  constructor(data, states = ['analysis_active', 'analysis_done', 'in_progress', 'dev_complete', 'verification_start', 'delivered']) {
+    this.data = data;
+    this.states = states;
   }
   /**
    * Computes the dataSet for the Scatterplot and Histogram graphs.
@@ -61,32 +61,32 @@ class ScatterplotGraph {
    * ];
    */
   computeDataSet() {
-      const dataSet = [];
-      this.data.forEach((ticket) => {
-          if (ticket.delivered) {
-              const deliveredDate = new Date(ticket.delivered * 1000);
-              deliveredDate.setHours(0, 0, 0, 0);
-              const scatterplotTicket = {
-                  deliveredDate: deliveredDate,
-                  leadTime: 0,
-                  ticketId: ticket.work_id,
-              };
-              console.log(scatterplotTicket)
-              for (const state of this.states) {
-                  if (ticket[state]) {
-                      scatterplotTicket.leadTime = calculateDaysBetweenDates(ticket[state], ticket.delivered);
-                      break;
-                  }
-              }
-              if (scatterplotTicket.leadTime <= 0) {
-                  console.warn("Invalid lead time:", scatterplotTicket.leadTime, "Ticket has incorrect timestamps", ticket);
-                  return;
-              }
-              dataSet.push(scatterplotTicket);
+    const dataSet = [];
+    this.data.forEach((ticket) => {
+      if (ticket.delivered) {
+        const deliveredDate = new Date(ticket.delivered * 1000);
+        deliveredDate.setHours(0, 0, 0, 0);
+        const scatterplotTicket = {
+          deliveredDate: deliveredDate,
+          leadTime: 0,
+          ticketId: ticket.work_id,
+        };
+        for (const state of this.states) {
+          if (ticket[state]) {
+            scatterplotTicket.leadTime = calculateDaysBetweenDates(ticket[state], ticket.delivered);
+            break;
           }
-      });
-      dataSet.sort((t1, t2) => t1.deliveredDate - t2.deliveredDate);
-      return dataSet;
+        }
+        if (scatterplotTicket.leadTime <= 0) {
+          console.warn('Invalid lead time:', scatterplotTicket.leadTime, 'Ticket has incorrect timestamps', ticket);
+          return;
+        }
+        dataSet.push(scatterplotTicket);
+      }
+    });
+    dataSet.sort((t1, t2) => t1.deliveredDate - t2.deliveredDate);
+    console.log(dataSet);
+    return dataSet;
   }
 }
 

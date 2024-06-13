@@ -7,6 +7,7 @@ import * as d3 from 'd3';
  */
 export default class UIControlsRenderer extends Renderer {
   selectedTimeRange;
+  datePropertyName;
   defaultTimeRange;
   #defaultReportingRangeDays = 90;
   #defaultTimeInterval = 'weeks';
@@ -87,7 +88,6 @@ export default class UIControlsRenderer extends Renderer {
     });
   }
 
-
   /**
    * Computes the reporting range for the chart based on the number of days.
    * @param {number} noOfDays - The number of days for the reporting range.
@@ -96,6 +96,7 @@ export default class UIControlsRenderer extends Renderer {
   computeReportingRange(noOfDays) {
     const finalDate = this.data[this.data.length - 1][this.datePropertyName];
     let endDate = new Date(finalDate);
+    console.log(this.data[this.data.length - 1], finalDate, noOfDays);
     let startDate = addDaysToDate(finalDate, -Number(noOfDays));
     if (this.selectedTimeRange) {
       endDate = new Date(this.selectedTimeRange[1]);
@@ -118,7 +119,6 @@ export default class UIControlsRenderer extends Renderer {
     return [startDate, endDate];
   }
 
-
   /**
    * Creates and configures an x-axis based on the specified time interval.
    * The axis is created using D3.js and configured for different time intervals: days, weeks, or months.
@@ -127,21 +127,20 @@ export default class UIControlsRenderer extends Renderer {
    * @returns {d3.Axis} - The configured D3 axis for the x-axis.
    */
   createXAxis(x, timeInterval = this.timeInterval) {
-    console.log("time interval", this.timeInterval)
     let axis;
     switch (timeInterval) {
-      case "days":
+      case 'days':
         axis = d3
-            .axisBottom(x)
-            .ticks(d3.timeDay.every(1)) // label every 2 days
-            .tickFormat((d, i) => {
-              return i % 2 === 0 ? d3.timeFormat("%b %d")(d) : "";
-            });
+          .axisBottom(x)
+          .ticks(d3.timeDay.every(1)) // label every 2 days
+          .tickFormat((d, i) => {
+            return i % 2 === 0 ? d3.timeFormat('%b %d')(d) : '';
+          });
         break;
-      case "weeks":
+      case 'weeks':
         axis = d3.axisBottom(x).ticks(d3.timeWeek);
         break;
-      case "months":
+      case 'months':
         axis = d3.axisBottom(x).ticks(d3.timeMonth);
         break;
       default:
@@ -159,19 +158,19 @@ export default class UIControlsRenderer extends Renderer {
     // console.log("this.timeInterval", this.timeInterval)
 
     if (isManualUpdate) {
-    switch (this.timeInterval) {
-      case 'weeks':
-        this.timeInterval = "months";
-        break;
-      case "months":
-        this.timeInterval = "days";
-        break;
-      case "days":
-        this.timeInterval = "weeks";
-        break;
-      default:
-        this.timeInterval = "weeks";
-    }
+      switch (this.timeInterval) {
+        case 'weeks':
+          this.timeInterval = 'months';
+          break;
+        case 'months':
+          this.timeInterval = 'days';
+          break;
+        case 'days':
+          this.timeInterval = 'weeks';
+          break;
+        default:
+          this.timeInterval = 'weeks';
+      }
     } else {
       this.timeInterval = this.determineTheAppropriateAxisLabels();
     }
@@ -181,14 +180,13 @@ export default class UIControlsRenderer extends Renderer {
   determineTheAppropriateAxisLabels() {
     // console.log("this.reportingRangeDays", this.reportingRangeDays)
     if (this.reportingRangeDays <= 31) {
-      return "days";
+      return 'days';
     }
     if (this.reportingRangeDays > 31 && this.reportingRangeDays <= 124) {
-      return "weeks";
+      return 'weeks';
     }
-    return "months";
+    return 'months';
   }
-
 
   /**
    * Abstract method to render the brush. Must be implemented in subclasses.
