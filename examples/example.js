@@ -3,8 +3,10 @@ import {
     CFDGraph,
     CFDRenderer,
     ScatterplotGraph,
-    HistogramRenderer,
-    ScatterplotRenderer,
+    MovingRangeGraph,
+    MovingRangeRenderer,
+    ControlRenderer,
+    SimpleScatterplotRenderer,
     ObservationLoggingService,
     processServiceData,
     eventBus
@@ -58,33 +60,62 @@ function renderCfdGraph(data, controlsElementSelector, loadConfigInputSelector, 
 function renderScatterplotAndHistogramGraphs(data, reportingRangeDays, controlsElementSelector, loadConfigInputSelector, resetConfigInputSelector) {
     //The scatterplot area chart, histogram area chart and scatterplot brush window elements css selectors
     const scatterplotGraphElementSelector = "#scatterplot-area-div";
+    const movingRangeGraphElementSelector = "#moving-range-area-div";
+    const controlGraphElementSelector = "#control-area-div";
     const histogramGraphElementSelector = "#histogram-area-div";
     const baseJiraURL = "";
     const scatterplotBrushElementSelector = "#scatterplot-brush-div";
+    const controlBrushElementSelector = "#control-brush-div";
+    const movingRangeBrushElementSelector = "#moving-range-brush-div";
     //Create a ScatterplotGraph
     const scatterplotGraph = new ScatterplotGraph(data);
     // //Compute the dataset for the scatterplot and histogram graphs
     const leadTimeDataSet = scatterplotGraph.computeDataSet(data);
     //Create a ScatterplotRenderer
-    const scatterplotRenderer = new ScatterplotRenderer(leadTimeDataSet, baseJiraURL);
+    const scatterplotRenderer = new SimpleScatterplotRenderer(leadTimeDataSet, baseJiraURL);
     //Pass the created event bus to teh cfd graph
     scatterplotRenderer.setupEventBus(eventBus);
     //Create a HistogramRenderer
-    const histogramRenderer = new HistogramRenderer(leadTimeDataSet, eventBus);
+    // const histogramRenderer = new HistogramRenderer(leadTimeDataSet, eventBus);
     if (document.querySelector(scatterplotGraphElementSelector)) {
         if (leadTimeDataSet.length > 0) {
             scatterplotRenderer.renderGraph(scatterplotGraphElementSelector);
-            scatterplotRenderer.setReportingRangeDays(reportingRangeDays);
+            scatterplotRenderer.reportingRangeDays = reportingRangeDays
             scatterplotRenderer.setupXAxisControl()
             scatterplotRenderer.enableMetrics()
-            document.querySelector(histogramGraphElementSelector) && histogramRenderer.renderGraph(histogramGraphElementSelector);
+            // document.querySelector(histogramGraphElementSelector) && histogramRenderer.renderGraph(histogramGraphElementSelector);
             document.querySelector(scatterplotBrushElementSelector) && scatterplotRenderer.setupBrush(scatterplotBrushElementSelector);
             document.querySelector(loadConfigInputSelector) && scatterplotRenderer.setupConfigLoader(loadConfigInputSelector, resetConfigInputSelector);
         } else {
             scatterplotRenderer.clearGraph(scatterplotGraphElementSelector, scatterplotBrushElementSelector);
-            histogramRenderer.clearGraph(histogramGraphElementSelector);
+            // histogramRenderer.clearGraph(histogramGraphElementSelector);
         }
     }
+
+    //filter leadTimeDataSet values to not exceed 80 days lead time
+    const filteredLeadTimeDataSet = leadTimeDataSet.filter((d) => d.leadTime <= 80);
+
+    //Moving range chart
+    const movingRangeGraph = new MovingRangeGraph(filteredLeadTimeDataSet);
+    const movingRangeGraphDataSet = movingRangeGraph.computeDataSet();
+    // console.table(movingRangeGraphDataSet);
+    const movingRangeRenderer = new MovingRangeRenderer(movingRangeGraphDataSet);
+    movingRangeRenderer.renderGraph("#moving-range-area-div");
+    movingRangeRenderer.reportingRangeDays = reportingRangeDays;
+    movingRangeRenderer.setupEventBus(eventBus)
+    document.querySelector(movingRangeBrushElementSelector) && movingRangeRenderer.setupBrush(movingRangeBrushElementSelector);
+
+    movingRangeRenderer.setupXAxisControl()
+
+
+    //Control chart
+    const controlRenderer = new ControlRenderer(filteredLeadTimeDataSet, movingRangeRenderer.getAvgMovingRange());
+    controlRenderer.renderGraph("#control-area-div");
+    controlRenderer.reportingRangeDays = reportingRangeDays;
+    controlRenderer.setupEventBus(eventBus)
+    document.querySelector(controlBrushElementSelector) && controlRenderer.setupBrush(controlBrushElementSelector);
+    controlRenderer.setupXAxisControl()
+
     return scatterplotRenderer;
 }
 
@@ -100,8 +131,8 @@ async function renderGraphs(data, serviceId) {
         reportingRangeDays
     } = renderCfdGraph(data, controlsElementSelector, loadConfigInputSelector, resetConfigInputSelector);
     const scatterplotRenderer = renderScatterplotAndHistogramGraphs(data, reportingRangeDays, controlsElementSelector, loadConfigInputSelector, resetConfigInputSelector);
-    // const useObservationLogging = false;
-    // useObservationLogging && await useObservationLogging(scatterplotRenderer, cfdRenderer, serviceId);
+    const useObservationLogging = false;
+    useObservationLogging && await useObservationLogging(scatterplotRenderer, cfdRenderer, serviceId);
 }
 
 async function useObservationLogging(scatterplotRenderer, cfdRenderer, serviceId) {

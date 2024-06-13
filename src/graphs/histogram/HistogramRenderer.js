@@ -169,7 +169,7 @@ class HistogramRenderer extends Renderer {
    * @private
    */
   #handleTimeRangeChange(timeRange) {
-    const currentSelectionData = this.data.filter((d) => d.delivered >= timeRange[0] && d.delivered <= timeRange[1]);
+    const currentSelectionData = this.data.filter((d) => d.deliveredDate >= timeRange[0] && d.deliveredDate <= timeRange[1]);
     this.#computeXScale(currentSelectionData);
     this.#binnedData = this.#computeBinnedData(this.x, currentSelectionData);
     this.#computeYScale(this.#binnedData);
@@ -229,7 +229,7 @@ class HistogramRenderer extends Renderer {
    * @param {d3.Scale} x - The X-axis scale.
    */
   #drawPercentileLines(svg, data, x) {
-    const dataSortedByNoOfDays = [...data].sort((a, b) => a.noOfDays - b.noOfDays);
+    const dataSortedByNoOfDays = [...data].sort((a, b) => a.leadTime - b.leadTime);
     const percentile1 = this.#computePercentileLine(dataSortedByNoOfDays, 0.5);
     const percentile2 = this.#computePercentileLine(dataSortedByNoOfDays, 0.7);
     const percentile3 = this.#computePercentileLine(dataSortedByNoOfDays, 0.85);
@@ -249,7 +249,7 @@ class HistogramRenderer extends Renderer {
    */
   #computePercentileLine(data, percent) {
     const percentileIndex = Math.floor(data.length * percent);
-    return data[percentileIndex]?.noOfDays;
+    return data[percentileIndex]?.leadTime;
   }
 
   /**
