@@ -2,9 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta
-            content="connect-src 'self' https://4njxsfgzvh.execute-api.us-east-1.amazonaws.com"
-            http-equiv="Content-Security-Policy" />
     <title>Graphs Example</title>
     <script src="https://cdn.tailwindcss.com" integrity="sha384-76mJWTQIdZ/g5T0cSoBptGTnvK4ZolzknwUlxOwBUSP9kr82qsUh1aavwwx31NAa" crossorigin="anonymous"></script>
 </head>
@@ -71,7 +68,7 @@
                                     id="work-item-input"
                                     readonly
                                     type="text" />
-                            <label class="block text-black font-medium mt-4" for="average-cycle-time-input">Lead time</label>
+                            <label class="block text-black font-medium mt-4" for="lead-time-input">Lead time</label>
                             <input
                                     class="shadow appearance-none bg-gray-300 px-4 w-50 cursor-not-allowed border py-1 rounded text-blue-500 leading-tight focus:outline-none focus:shadow-outline"
                                     id="lead-time-input"
@@ -157,6 +154,13 @@
                 <div id="scatterplot-brush-div"></div>
                 <h1 class="my-2 text-center font-bold">Histogram</h1>
                 <div id="histogram-area-div"></div>
+
+                <h1 class="my-2 text-center font-bold">Moving range</h1>
+                <div id="moving-range-area-div"></div>
+                <div id="moving-range-brush-div"></div>
+                <h1 class="my-2 text-center font-bold">Control area</h1>
+                <div id="control-area-div"></div>
+                <div id="control-brush-div"></div>
             </div>
         </div>
     </div>
