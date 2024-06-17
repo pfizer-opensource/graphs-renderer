@@ -1,7 +1,6 @@
 import ScatterplotGraph from '../../../src/graphs/scatterplot/ScatterplotGraph.js';
 import graphsTestData from '../../testData/GraphTestData.js';
 import scatterplotGraphOutput from '../../testData/ScatterplotGraphExpectedOutput.js';
-import cfdGraphOutput from "../../testData/CFDGraphExpectedOutput.js";
 
 describe('ScatterplotGraph', () => {
     let scatterplotGraph;
