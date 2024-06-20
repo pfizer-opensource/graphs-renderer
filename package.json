@@ -5,9 +5,9 @@
   "main": "./src/index.js",
   "type": "module",
   "scripts": {
-    "postinstall": "webpack --mode production",
     "build:dev": "webpack --mode development",
     "build:prod": "webpack --mode production",
+    "postinstall": "npm run build:prod",
     "watch": "webpack --mode development --watch",
     "lint": "eslint 'src/**/*.{js,jsx}' --max-warnings=0",
     "lint:fix": "eslint 'src/**/*.{js,jsx}' --fix",
