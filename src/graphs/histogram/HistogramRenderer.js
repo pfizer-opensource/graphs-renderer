@@ -36,6 +36,7 @@ class HistogramRenderer extends Renderer {
    */
   constructor(data, eventBus) {
     super(data);
+    console.log(data[0].leadTime)
     this.eventBus = eventBus;
     this.eventBus?.addEventListener('change-time-range-scatterplot', this.#handleTimeRangeChange.bind(this));
   }

@@ -25,6 +25,7 @@ module.exports = (env, argv) => {
             path: path.resolve(__dirname, 'dist'),
             // library: 'graphs-renderer',
             libraryTarget: 'module',
+            sourceMapFilename: 'graphs-renderer.js.map' // Explicitly set the source map filename
         },
         module: {
             rules: [
@@ -35,6 +36,7 @@ module.exports = (env, argv) => {
                         loader: 'babel-loader',
                         options: {
                             presets: ['@babel/preset-env'],
+                            sourceMaps: true // Enable source maps for Babel
                         },
                     },
                 },
