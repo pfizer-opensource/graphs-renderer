@@ -6,6 +6,7 @@ import {
     MovingRangeGraph,
     MovingRangeRenderer,
     ControlRenderer,
+    HistogramRenderer,
     SimpleScatterplotRenderer,
     ObservationLoggingService,
     processServiceData,
@@ -76,19 +77,19 @@ function renderScatterplotAndHistogramGraphs(data, reportingRangeDays, controlsE
     //Pass the created event bus to teh cfd graph
     scatterplotRenderer.setupEventBus(eventBus);
     //Create a HistogramRenderer
-    // const histogramRenderer = new HistogramRenderer(leadTimeDataSet, eventBus);
+    const histogramRenderer = new HistogramRenderer(leadTimeDataSet, eventBus);
     if (document.querySelector(scatterplotGraphElementSelector)) {
         if (leadTimeDataSet.length > 0) {
             scatterplotRenderer.renderGraph(scatterplotGraphElementSelector);
             scatterplotRenderer.reportingRangeDays = reportingRangeDays
             scatterplotRenderer.setupXAxisControl()
             scatterplotRenderer.enableMetrics()
-            // document.querySelector(histogramGraphElementSelector) && histogramRenderer.renderGraph(histogramGraphElementSelector);
+            document.querySelector(histogramGraphElementSelector) && histogramRenderer.renderGraph(histogramGraphElementSelector);
             document.querySelector(scatterplotBrushElementSelector) && scatterplotRenderer.setupBrush(scatterplotBrushElementSelector);
             document.querySelector(loadConfigInputSelector) && scatterplotRenderer.setupConfigLoader(loadConfigInputSelector, resetConfigInputSelector);
         } else {
             scatterplotRenderer.clearGraph(scatterplotGraphElementSelector, scatterplotBrushElementSelector);
-            // histogramRenderer.clearGraph(histogramGraphElementSelector);
+            histogramRenderer.clearGraph(histogramGraphElementSelector);
         }
     }
 
