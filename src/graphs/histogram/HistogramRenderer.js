@@ -10,7 +10,7 @@ class HistogramRenderer extends Renderer {
   #binnedData;
   #noOfBins = 10;
   #yAccessor = (d) => d.length;
-  #xAccessor = (d) => d.noOfDays;
+  #xAccessor = (d) => d.leadTime;
   xAxisLabel = '# of delivery days';
   yAxisLabel = '# of tickets';
 
