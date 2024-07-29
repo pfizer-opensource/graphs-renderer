@@ -64,6 +64,7 @@ function renderScatterplotAndHistogramGraphs(data, reportingRangeDays, controlsE
     const movingRangeGraphElementSelector = "#moving-range-area-div";
     const controlGraphElementSelector = "#control-area-div";
     const histogramGraphElementSelector = "#histogram-area-div";
+    const timeScaleSelector = "#time-scale-select";
     const baseJiraURL = "";
     const scatterplotBrushElementSelector = "#scatterplot-brush-div";
     const controlBrushElementSelector = "#control-brush-div";
@@ -80,6 +81,7 @@ function renderScatterplotAndHistogramGraphs(data, reportingRangeDays, controlsE
     const histogramRenderer = new HistogramRenderer(leadTimeDataSet, eventBus);
     if (document.querySelector(scatterplotGraphElementSelector)) {
         if (leadTimeDataSet.length > 0) {
+            scatterplotRenderer.setTimeScaleListener(timeScaleSelector)
             scatterplotRenderer.renderGraph(scatterplotGraphElementSelector);
             scatterplotRenderer.reportingRangeDays = reportingRangeDays
             scatterplotRenderer.setupXAxisControl()
@@ -101,7 +103,7 @@ function renderScatterplotAndHistogramGraphs(data, reportingRangeDays, controlsE
     const movingRangeGraphDataSet = movingRangeGraph.computeDataSet();
     // console.table(movingRangeGraphDataSet);
     const movingRangeRenderer = new MovingRangeRenderer(movingRangeGraphDataSet);
-    movingRangeRenderer.renderGraph("#moving-range-area-div");
+    movingRangeRenderer.renderGraph(movingRangeGraphElementSelector);
     movingRangeRenderer.reportingRangeDays = reportingRangeDays;
     movingRangeRenderer.setupEventBus(eventBus)
     document.querySelector(movingRangeBrushElementSelector) && movingRangeRenderer.setupBrush(movingRangeBrushElementSelector);
@@ -111,7 +113,7 @@ function renderScatterplotAndHistogramGraphs(data, reportingRangeDays, controlsE
 
     //Control chart
     const controlRenderer = new ControlRenderer(filteredLeadTimeDataSet, movingRangeRenderer.getAvgMovingRange());
-    controlRenderer.renderGraph("#control-area-div");
+    controlRenderer.renderGraph(controlGraphElementSelector);
     controlRenderer.reportingRangeDays = reportingRangeDays;
     controlRenderer.setupEventBus(eventBus)
     document.querySelector(controlBrushElementSelector) && controlRenderer.setupBrush(controlBrushElementSelector);

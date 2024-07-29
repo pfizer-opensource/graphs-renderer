@@ -17,6 +17,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
   yAxisLabel = '# of delivery days';
   timeScale = 'logarithmic';
   timeIntervalChangeEventName = 'change-time-interval-scatterplot';
+  workTicketsURL = '#';
 
   /**
    * Creates a ScatterplotRenderer instance
@@ -61,8 +62,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * Renders the Scatterplot graph in a specified DOM element.
    * @param {string} graphElementSelector - The DOM selector for the graph element.
    */
-  renderGraph(graphElementSelector, timeScaleSelector) {
-    console.log(timeScaleSelector);
+  renderGraph(graphElementSelector) {
     this.drawSvg(graphElementSelector);
     this.drawAxes();
     this.drawArea();

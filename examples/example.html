@@ -150,6 +150,15 @@
                 <div id="cfd-area-div"></div>
                 <div id="cfd-brush-div"></div>
                 <h1 class="my-2 text-center font-bold">Scatterplot</h1>
+                <div class="flex-1 flex flex-col items-end mr-16 mb-12">
+                    <label class="block my-2 text-sm mr-14 font-medium text-gray-900" for="time-scale-select">Time scale</label>
+                    <select
+                            class="bg-gray-50 border w-180px border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2"
+                            id="time-scale-select">
+                        <option selected value="logarithmic">logarithmic</option>
+                        <option value="linear">linear</option>
+                    </select>
+                </div>
                 <div id="scatterplot-area-div"></div>
                 <div id="scatterplot-brush-div"></div>
                 <h1 class="my-2 text-center font-bold">Histogram</h1>
