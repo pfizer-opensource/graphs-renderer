@@ -17,8 +17,7 @@ class MovingRangeRenderer extends ScatterplotRenderer {
     this.eventBus?.addEventListener('change-time-range-control', this.updateBrushSelection.bind(this));
   }
 
-  renderGraph(graphElementSelector, timeScaleSelector) {
-    console.log(timeScaleSelector);
+  renderGraph(graphElementSelector) {
     this.drawSvg(graphElementSelector);
     this.drawAxes();
     this.drawArea();

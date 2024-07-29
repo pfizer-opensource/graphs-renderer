@@ -10,6 +10,7 @@ class ControlRenderer extends ScatterplotRenderer {
     this.chartType = 'CONTROL';
     this.avgMovingRange = avgMovingRange;
     this.dotClass = 'control-dot';
+    this.yAxisLabel = 'Days';
   }
 
   setupEventBus(eventBus) {
@@ -17,8 +18,7 @@ class ControlRenderer extends ScatterplotRenderer {
     this.eventBus?.addEventListener('change-time-range-moving-range', this.updateBrushSelection.bind(this));
   }
 
-  renderGraph(graphElementSelector, timeScaleSelector) {
-    console.log(timeScaleSelector);
+  renderGraph(graphElementSelector) {
     this.drawSvg(graphElementSelector);
     this.drawAxes();
     this.drawArea();
@@ -28,11 +28,6 @@ class ControlRenderer extends ScatterplotRenderer {
     this.drawHorizontalLine(this.y, this.topLimit, 'purple', 'top');
     this.drawHorizontalLine(this.y, this.avgLeadTime, 'orange', 'center');
     this.bottomLimit > 0 && this.drawHorizontalLine(this.y, this.bottomLimit, 'purple', 'bottom');
-    console.log('avgLeadTime', this.avgLeadTime);
-    console.log('avgMovingRange', this.avgMovingRange);
-    console.log('top', this.topLimit);
-    console.log('bottom', this.bottomLimit);
-    this.drawAxesLabels(this.svg, 'Time', 'Days');
   }
 
   drawScatterplot(chartArea, data, x, y) {
