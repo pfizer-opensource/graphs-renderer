@@ -128,7 +128,7 @@ export default class Renderer {
       .append('text')
       .attr('text-anchor', 'end')
       .attr('x', -20)
-      .attr('y', -10)
+      .attr('y', -15)
       .text(yLabel)
       .attr('text-anchor', 'start')
       .style('font-size', this.axisLabelFontSize);
