@@ -49,13 +49,11 @@ class SimpleScatterplotRenderer extends ScatterplotRenderer {
     });
   }
 
-  renderGraph(graphElementSelector, timeScaleSelector) {
+  renderGraph(graphElementSelector) {
     this.drawSvg(graphElementSelector);
     this.drawAxes();
     this.drawArea();
     this.drawPercentileLines(this.data, this.y);
-    this.drawAxesLabels(this.svg, 'Time', '# of delivery days');
-    this.setTimeScaleListener(timeScaleSelector);
   }
 
   drawScatterplot(chartArea, data, x, y) {
@@ -78,7 +76,7 @@ class SimpleScatterplotRenderer extends ScatterplotRenderer {
 
   updateGraph(domain) {
     const focusData = this.updateChartArea(domain);
-    this.drawPercentileLines(this.svg, focusData, this.currentYScale);
+    this.drawPercentileLines(focusData, this.currentYScale);
     this.displayObservationMarkers(this.observations);
   }
 
@@ -89,7 +87,7 @@ class SimpleScatterplotRenderer extends ScatterplotRenderer {
       this.timeScaleSelectElement.addEventListener('change', (event) => {
         this.timeScale = event.target.value;
         this.computeYScale();
-        this.brushSelector ? this.renderBrush() : this.updateGraph(this.selectedTimeRange);
+        this.updateGraph(this.selectedTimeRange);
       });
     }
   }
