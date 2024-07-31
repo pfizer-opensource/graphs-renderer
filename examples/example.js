@@ -101,7 +101,6 @@ function renderScatterplotAndHistogramGraphs(data, reportingRangeDays, controlsE
     //Moving range chart
     const movingRangeGraph = new MovingRangeGraph(filteredLeadTimeDataSet);
     const movingRangeGraphDataSet = movingRangeGraph.computeDataSet();
-    // console.table(movingRangeGraphDataSet);
     const movingRangeRenderer = new MovingRangeRenderer(movingRangeGraphDataSet);
     movingRangeRenderer.renderGraph(movingRangeGraphElementSelector);
     movingRangeRenderer.reportingRangeDays = reportingRangeDays;
