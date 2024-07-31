@@ -85,7 +85,6 @@ class ScatterplotGraph {
       }
     });
     dataSet.sort((t1, t2) => t1.deliveredDate - t2.deliveredDate);
-    console.log(dataSet);
     return dataSet;
   }
 }

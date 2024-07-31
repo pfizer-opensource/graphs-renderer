@@ -40,7 +40,6 @@ class ScatterplotRenderer extends UIControlsRenderer {
    */
   constructor(data) {
     super(data);
-    console.table(data);
   }
 
   /**
@@ -134,7 +133,6 @@ class ScatterplotRenderer extends UIControlsRenderer {
     this.changeTimeInterval(false, `${this.chartName}`);
     this.drawXAxis(this.gx, this.currentXScale, this.height, true);
     this.drawYAxis(this.gy, this.currentYScale);
-    console.log(this.dotClass);
     this.chartArea
       .selectAll(`.${this.dotClass}`)
       .attr('cx', (d) => this.currentXScale(d.deliveredDate))
@@ -186,8 +184,6 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * @param {d3.Scale} y - The Y-axis scale.
    */
   drawScatterplot(chartArea, data, x, y) {
-    console.log('UP___dot____', this.dotClass);
-
     chartArea
       .selectAll(`.${this.dotClass}`)
       .data(data)
@@ -212,8 +208,6 @@ class ScatterplotRenderer extends UIControlsRenderer {
   setupXAxisControl() {
     this.gx.on('click', () => {
       this.changeTimeInterval(true, `${this.chartName}`);
-      console.log(this.gx);
-      console.log(this.selectedTimeRange);
       this.drawXAxis(this.gx, this.x.copy().domain(this.selectedTimeRange), this.height, true);
     });
   }
