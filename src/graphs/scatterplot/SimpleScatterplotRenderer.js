@@ -57,7 +57,6 @@ class SimpleScatterplotRenderer extends ScatterplotRenderer {
   }
 
   drawScatterplot(chartArea, data, x, y) {
-    console.log('Simple___dot____', this.dotClass);
     chartArea
       .selectAll(`.${this.dotClass}`)
       .data(data)

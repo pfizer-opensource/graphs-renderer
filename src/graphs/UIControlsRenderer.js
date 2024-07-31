@@ -96,7 +96,6 @@ export default class UIControlsRenderer extends Renderer {
   computeReportingRange(noOfDays) {
     const finalDate = this.data[this.data.length - 1][this.datePropertyName];
     let endDate = new Date(finalDate);
-    console.log(this.data[this.data.length - 1], finalDate, noOfDays);
     let startDate = addDaysToDate(finalDate, -Number(noOfDays));
     if (this.selectedTimeRange) {
       endDate = new Date(this.selectedTimeRange[1]);
@@ -155,8 +154,6 @@ export default class UIControlsRenderer extends Renderer {
    * and then redraws the x-axis based on the selected time range.
    */
   changeTimeInterval(isManualUpdate, chart) {
-    // console.log("this.timeInterval", this.timeInterval)
-
     if (isManualUpdate) {
       switch (this.timeInterval) {
         case 'weeks':
@@ -178,7 +175,6 @@ export default class UIControlsRenderer extends Renderer {
   }
 
   determineTheAppropriateAxisLabels() {
-    // console.log("this.reportingRangeDays", this.reportingRangeDays)
     if (this.reportingRangeDays <= 31) {
       return 'days';
     }
