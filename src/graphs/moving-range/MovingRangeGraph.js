@@ -15,7 +15,6 @@ class MovingRangeGraph {
 
     // Sort the groupedArray by date to ensure correct ordering for difference calculation
     groupedArray.sort((a, b) => new Date(a.date) - new Date(b.date));
-    // console.table(groupedArray);
     // Step 3: Calculate absolute differences
     const avgLeadTimes = [];
     for (let i = 1; i < groupedArray.length; i++) {

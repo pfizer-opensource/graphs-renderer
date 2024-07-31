@@ -53,7 +53,6 @@ class CFDRenderer extends UIControlsRenderer {
     super(data);
     this.states = states;
     this.#statesColors = d3.scaleOrdinal().domain(this.states).range(this.#colorPalette);
-    console.table(this.data);
   }
 
   /**
@@ -568,21 +567,12 @@ class CFDRenderer extends UIControlsRenderer {
       const xPosition = coords[0];
       const yPosition = coords[1];
 
-      // Debug logs
-      // console.log("coords:", coords);
-      // console.log("xPosition:", xPosition, "yPosition:", yPosition);
-      // console.log("currentXScale domain:", this.currentXScale.domain());
-      // console.log("currentXScale range:", this.currentXScale.range());
-
-      // Ensure xPosition is within the chart's range
       if (xPosition < 0 || xPosition > this.width) {
-        console.log('xPosition out of bounds:', xPosition);
+        console.warn('Mouse position out of bounds:', xPosition);
         return;
       }
 
       const date = this.currentXScale.invert(xPosition);
-      // console.log("pointer", date, event, coords);
-
       const cumulativeCountOfWorkItems = this.currentYScale.invert(yPosition);
       const excludeCycleTime = eventName === 'scatterplot-mousemove';
 
