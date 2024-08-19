@@ -1,5 +1,7 @@
 import * as d3 from 'd3';
+
 class MovingRangeGraph {
+  dataSet = [];
   constructor(data) {
     this.data = data;
   }
@@ -16,20 +18,26 @@ class MovingRangeGraph {
     // Sort the groupedArray by date to ensure correct ordering for difference calculation
     groupedArray.sort((a, b) => new Date(a.date) - new Date(b.date));
     // Step 3: Calculate absolute differences
-    const avgLeadTimes = [];
+    this.dataSet = [];
     for (let i = 1; i < groupedArray.length; i++) {
       const prev = groupedArray[i - 1];
       const current = groupedArray[i];
       const difference = Math.abs(current.value - prev.value);
 
-      avgLeadTimes.push({
+      this.dataSet.push({
         fromDate: new Date(prev.date),
         deliveredDate: new Date(current.date),
         leadTime: difference,
       });
     }
+    return this.dataSet;
+  }
 
-    return avgLeadTimes;
+  getAvgMovingRange() {
+    if (!this.dataSet) {
+      throw new Error('Data set not computed. Call computeDataSet() first.');
+    }
+    return Math.ceil(this.dataSet.reduce((acc, curr) => acc + curr.leadTime, 0) / this.dataSet.length);
   }
 }
 
