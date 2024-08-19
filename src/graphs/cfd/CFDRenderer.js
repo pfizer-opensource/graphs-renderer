@@ -66,7 +66,7 @@ class CFDRenderer extends UIControlsRenderer {
     this.eventBus?.addEventListener('scatterplot-mouseleave', () => this.hideTooltipAndMovingLine());
     this.eventBus?.addEventListener('change-time-interval-scatterplot', (timeInterval) => {
       this.timeInterval = timeInterval;
-      this.drawXAxis(this.gx, this.x.copy().domain(this.selectedTimeRange), this.height, true);
+      this.drawXAxis(this.gx, this.x?.copy().domain(this.selectedTimeRange), this.height, true);
     });
   }
 
@@ -128,9 +128,12 @@ class CFDRenderer extends UIControlsRenderer {
    * @param {string} cfdBrushElementSelector - Selector of the DOM element to clear the brush.
    */
   clearGraph(graphElementSelector, cfdBrushElementSelector) {
+    this.eventBus.removeAllListeners('change-time-range-scatterplot');
+    this.eventBus.removeAllListeners('scatterplot-mousemove');
+    this.eventBus.removeAllListeners('scatterplot-mouseleave');
+    this.eventBus.removeAllListeners('change-time-interval-scatterplot');
     this.#drawBrushSvg(cfdBrushElementSelector);
     this.#drawSvg(graphElementSelector);
-    this.#drawAxes();
   }
 
   /**
@@ -368,7 +371,7 @@ class CFDRenderer extends UIControlsRenderer {
    * @param {Object} observations - Observations data for the renderer.
    */
   setupObservationLogging(observations) {
-    if (observations) {
+    if (observations.length > 0) {
       this.displayObservationMarkers(observations);
       this.enableMetrics();
     }
@@ -395,7 +398,7 @@ class CFDRenderer extends UIControlsRenderer {
     const trianglePath = `M${-triangleBase / 2},0 L${triangleBase / 2},0 L0,-${triangleHeight} Z`;
     this.chartArea
       .selectAll('observations')
-      .data(observations.data.filter((d) => d.chart_type === 'CFD'))
+      .data(observations?.data?.filter((d) => d.chart_type === 'CFD'))
       .join('path')
       .attr('class', 'observation-marker')
       .attr('d', trianglePath)
