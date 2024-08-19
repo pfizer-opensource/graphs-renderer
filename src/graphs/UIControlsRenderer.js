@@ -171,6 +171,7 @@ export default class UIControlsRenderer extends Renderer {
     } else {
       this.timeInterval = this.determineTheAppropriateAxisLabels();
     }
+
     this.eventBus?.emitEvents(`change-time-interval-${chart}`, this.timeInterval);
   }
 
