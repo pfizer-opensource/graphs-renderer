@@ -87,6 +87,7 @@ class SimpleScatterplotRenderer extends ScatterplotRenderer {
         this.timeScale = event.target.value;
         this.computeYScale();
         this.updateGraph(this.selectedTimeRange);
+        this.renderBrush();
       });
     }
   }

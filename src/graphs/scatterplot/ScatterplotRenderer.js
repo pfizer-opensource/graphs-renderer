@@ -51,7 +51,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
     this.eventBus?.addEventListener('change-time-range-cfd', this.updateBrushSelection.bind(this));
     this.eventBus?.addEventListener('change-time-interval-cfd', (timeInterval) => {
       this.timeInterval = timeInterval;
-      this.drawXAxis(this.gx, this.x.copy().domain(this.selectedTimeRange), this.height, true);
+      this.drawXAxis(this.gx, this.x?.copy().domain(this.selectedTimeRange), this.height, true);
     });
   }
 
@@ -110,9 +110,10 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * @param {string} brushElementSelector - The selector of the brush element to clear.
    */
   clearGraph(graphElementSelector, brushElementSelector) {
+    this.eventBus?.removeAllListeners('change-time-interval-cfd');
+    this.eventBus?.removeAllListeners('change-time-range-cfd');
     this.drawBrushSvg(brushElementSelector);
     this.drawSvg(graphElementSelector);
-    this.drawAxes();
   }
 
   /**
@@ -241,7 +242,13 @@ class ScatterplotRenderer extends UIControlsRenderer {
   }
 
   computeXScale() {
-    const xDomain = d3.extent(this.data, (d) => d.deliveredDate);
+    const bufferDays = 2;
+    const xExtent = d3.extent(this.data, (d) => d.deliveredDate);
+    const minDate = new Date(xExtent[0]);
+    const maxDate = new Date(xExtent[1]);
+    minDate.setDate(minDate.getDate() - bufferDays);
+    maxDate.setDate(maxDate.getDate() + bufferDays);
+    const xDomain = [minDate, maxDate];
     this.x = this.computeTimeScale(xDomain, [0, this.width]);
   }
 
@@ -311,7 +318,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * @param {Object} observations - Observations data for the renderer.
    */
   setupObservationLogging(observations) {
-    if (observations) {
+    if (observations.length > 0) {
       this.displayObservationMarkers(observations);
       this.enableMetrics();
     }
@@ -346,7 +353,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
       .selectAll('ring')
       .data(
         this.data.filter((d) =>
-          this.observations.data.some((o) => o.work_item.toString() === d.ticketId.toString() && o.chart_type === this.chartType)
+          this.observations?.data?.some((o) => o.work_item.toString() === d.ticketId.toString() && o.chart_type === this.chartType)
         )
       )
       .enter()

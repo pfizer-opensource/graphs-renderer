@@ -101,17 +101,17 @@ function renderScatterplotAndHistogramGraphs(data, reportingRangeDays, controlsE
     //Moving range chart
     const movingRangeGraph = new MovingRangeGraph(filteredLeadTimeDataSet);
     const movingRangeGraphDataSet = movingRangeGraph.computeDataSet();
-    const movingRangeRenderer = new MovingRangeRenderer(movingRangeGraphDataSet);
+    const avgMovingRange = movingRangeGraph.getAvgMovingRange()
+    const movingRangeRenderer = new MovingRangeRenderer(movingRangeGraphDataSet, avgMovingRange);
     movingRangeRenderer.renderGraph(movingRangeGraphElementSelector);
     movingRangeRenderer.reportingRangeDays = reportingRangeDays;
     movingRangeRenderer.setupEventBus(eventBus)
     document.querySelector(movingRangeBrushElementSelector) && movingRangeRenderer.setupBrush(movingRangeBrushElementSelector);
-
     movingRangeRenderer.setupXAxisControl()
 
 
     //Control chart
-    const controlRenderer = new ControlRenderer(filteredLeadTimeDataSet, movingRangeRenderer.getAvgMovingRange());
+    const controlRenderer = new ControlRenderer(filteredLeadTimeDataSet, avgMovingRange);
     controlRenderer.renderGraph(controlGraphElementSelector);
     controlRenderer.reportingRangeDays = reportingRangeDays;
     controlRenderer.setupEventBus(eventBus)
