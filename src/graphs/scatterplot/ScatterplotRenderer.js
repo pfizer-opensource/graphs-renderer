@@ -134,10 +134,11 @@ class ScatterplotRenderer extends UIControlsRenderer {
     this.changeTimeInterval(false, `${this.chartName}`);
     this.drawXAxis(this.gx, this.currentXScale, this.height, true);
     this.drawYAxis(this.gy, this.currentYScale);
+
     this.chartArea
       .selectAll(`.${this.dotClass}`)
       .attr('cx', (d) => this.currentXScale(d.deliveredDate))
-      .attr('cy', (d) => this.currentYScale(d.leadTime))
+      .attr('cy', (d) => this.applyYScale(this.currentYScale, d.leadTime))
       .attr('fill', this.color);
     return focusData;
   }
@@ -194,12 +195,25 @@ class ScatterplotRenderer extends UIControlsRenderer {
       .attr('data-date', (d) => d.deliveredDate)
       .attr('r', 5)
       .attr('cx', (d) => x(d.deliveredDate))
-      .attr('cy', (d) => y(d.leadTime))
+      .attr('cy', (d) => this.applyYScale(y, d.leadTime))
       .style('cursor', 'pointer')
       .attr('fill', this.color);
   }
 
   //endregion
+
+  setTimeScaleListener(timeScaleSelector) {
+    this.timeScaleSelectElement = document.querySelector(timeScaleSelector);
+    if (this.timeScaleSelectElement) {
+      this.timeScaleSelectElement.value = this.timeScale;
+      this.timeScaleSelectElement.addEventListener('change', (event) => {
+        this.timeScale = event.target.value;
+        this.computeYScale();
+        this.updateGraph(this.selectedTimeRange);
+        this.renderBrush();
+      });
+    }
+  }
 
   //region Axes rendering
 
@@ -209,7 +223,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
   setupXAxisControl() {
     this.gx.on('click', () => {
       this.changeTimeInterval(true, `${this.chartName}`);
-      this.drawXAxis(this.gx, this.x.copy().domain(this.selectedTimeRange), this.height, true);
+      this.drawXAxis(this.gx, this.x?.copy().domain(this.selectedTimeRange), this.height, true);
     });
   }
 
@@ -241,6 +255,15 @@ class ScatterplotRenderer extends UIControlsRenderer {
     }
   }
 
+  applyYScale(yScale, value) {
+    if (this.timeScale === 'logarithmic' && value <= 0) {
+      // Handle zero or negative values explicitly
+      return yScale(1e-6);
+    } else {
+      return yScale(value);
+    }
+  }
+
   computeXScale() {
     const bufferDays = 2;
     const xExtent = d3.extent(this.data, (d) => d.deliveredDate);
@@ -261,8 +284,8 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * @param isGraph
    */
   drawXAxis(g, x, height = this.height, isGraph = false) {
-    const axis = this.createXAxis(x);
     if (isGraph) {
+      const axis = this.createXAxis(x);
       const axisHeight = 20;
       let grayBand = g.select('.axis-background');
       if (grayBand.empty()) {
@@ -292,6 +315,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
         d3.select(this).transition().duration(300).attr('height', axisHeight);
       });
     } else {
+      const axis = this.createXAxis(x, 'months');
       g.call(axis).attr('transform', `translate(0, ${height})`);
       const outerXAxisTicks = g.append('g').attr('class', 'outer-ticks').call(axis?.tickSize(-height).tickFormat(''));
       outerXAxisTicks.selectAll('.tick line').attr('opacity', 0.1);
@@ -360,7 +384,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
       .append('circle')
       .attr('class', 'ring')
       .attr('cx', (d) => this.currentXScale(d.deliveredDate))
-      .attr('cy', (d) => this.currentYScale(d.leadTime))
+      .attr('cy', (d) => this.applyYScale(this.currentYScale, d.leadTime))
       .attr('r', 8)
       .attr('fill', 'none')
       .attr('stroke', 'black')
@@ -379,7 +403,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
     !this.tooltip && this.#createTooltip();
     this.#clearTooltipContent();
     this.#positionTooltip(event.tooltipLeft, event.tooltipTop);
-    this.#populateTooltip(event);
+    this.populateTooltip(event);
   }
 
   /**
@@ -402,7 +426,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * @private
    * @param {Object} event - The event data for the tooltip.
    */
-  #populateTooltip(event) {
+  populateTooltip(event) {
     this.tooltip
       .style('pointer-events', 'auto')
       .style('opacity', 0.9)
@@ -448,7 +472,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
     }
     this.chartArea.on('mousemove', (event) => this.eventBus?.emitEvents(`${this.chartName}-mousemove`, event));
     this.chartArea.on('mouseleave', () => this.eventBus?.emitEvents(`${this.chartName}-mouseleave`));
-    this.#setupMouseLeaveHandler();
+    this.setupMouseLeaveHandler();
     this.#areMetricsEnabled = true;
   }
 
@@ -460,6 +484,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
    */
   handleMouseClickEvent(event, d) {
     let data = {
+      date: d.date,
       ticketId: d.ticketId,
       tooltipLeft: event.pageX,
       tooltipTop: event.pageY,
@@ -484,7 +509,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * Internal method to set up a handler for mouse leave events on the chart area.
    * @private
    */
-  #setupMouseLeaveHandler() {
+  setupMouseLeaveHandler() {
     d3.select(this.svg.node().parentNode).on('mouseleave', (event) => {
       if (event.relatedTarget !== this.tooltip?.node()) {
         this.hideTooltip();

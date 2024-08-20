@@ -1,5 +1,6 @@
 import ScatterplotRenderer from '../scatterplot/ScatterplotRenderer.js';
 import * as d3 from 'd3';
+import { formatDateToNumeric } from '../../utils/utils.js';
 
 class MovingRangeRenderer extends ScatterplotRenderer {
   color = '#0ea5e9';
@@ -26,6 +27,16 @@ class MovingRangeRenderer extends ScatterplotRenderer {
     this.y.domain([this.y.domain()[0], maxY]);
     this.drawArea();
     this.drawHorizontalLine(this.y, this.topLimit, 'orange', 'mid');
+    this.setupMouseLeaveHandler();
+  }
+
+  populateTooltip(event) {
+    this.tooltip
+      .style('pointer-events', 'auto')
+      .style('opacity', 0.9)
+      .append('p')
+      .style('text-decoration', 'underline')
+      .text(formatDateToNumeric(`${event.date}`));
   }
 
   drawScatterplot(chartArea, data, x, y) {
@@ -37,14 +48,16 @@ class MovingRangeRenderer extends ScatterplotRenderer {
       .attr('class', this.dotClass)
       .attr('r', 5)
       .attr('cx', (d) => x(d.deliveredDate))
-      .attr('cy', (d) => y(d.leadTime))
+      .attr('cy', (d) => this.applyYScale(y, d.leadTime))
       .style('cursor', 'pointer')
-      .attr('fill', this.color);
+      .attr('fill', this.color)
+      .on('mouseover', (event, d) => this.handleMouseClickEvent(event, { date: d.deliveredDate }));
+
     // Define the line generator
     const line = d3
       .line()
       .x((d) => x(d.deliveredDate))
-      .y((d) => y(d.leadTime));
+      .y((d) => this.applyYScale(y, d.leadTime));
     chartArea
       .selectAll('dot-line')
       .data([data])
@@ -63,7 +76,7 @@ class MovingRangeRenderer extends ScatterplotRenderer {
     const line = d3
       .line()
       .x((d) => this.currentXScale(d.deliveredDate))
-      .y((d) => this.currentYScale(d.leadTime));
+      .y((d) => this.applyYScale(this.currentYScale, d.leadTime));
     this.chartArea.selectAll('.dot-line').attr('d', line);
     this.drawHorizontalLine(this.currentYScale, this.avgMovingRange, 'orange', 'mid');
   }

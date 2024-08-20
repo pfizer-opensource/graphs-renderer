@@ -9,6 +9,7 @@ const metricsOutput = {
         "analysis_done": 0,
         "analysis_active": 0
     },
+    "averageCycleTime": null,
     "biggestCycleTime": 3,
     "averageLeadTime": 4,
     "throughput": 0.3,
