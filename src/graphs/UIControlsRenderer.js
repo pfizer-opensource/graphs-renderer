@@ -10,7 +10,7 @@ export default class UIControlsRenderer extends Renderer {
   datePropertyName;
   defaultTimeRange;
   #defaultReportingRangeDays = 90;
-  #defaultTimeInterval = 'weeks';
+  #defaultTimeInterval = 'months';
   reportingRangeDays = this.#defaultReportingRangeDays;
   timeInterval = this.#defaultTimeInterval;
   brushGroup;
