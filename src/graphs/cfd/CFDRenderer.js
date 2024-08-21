@@ -638,6 +638,7 @@ class CFDRenderer extends UIControlsRenderer {
         cycleTimesByState,
         biggestCycleTime,
         averageLeadTime,
+        averageCycleTime,
         throughput,
         metricLinesData: {
           averageCycleTime,

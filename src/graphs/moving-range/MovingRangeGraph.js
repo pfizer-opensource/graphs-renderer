@@ -17,25 +17,27 @@ class MovingRangeGraph {
 
     // Sort the groupedArray by date to ensure correct ordering for difference calculation
     groupedArray.sort((a, b) => new Date(a.date) - new Date(b.date));
-    // Step 3: Calculate absolute differences
     this.dataSet = [];
-    for (let i = 1; i < groupedArray.length; i++) {
-      const prev = groupedArray[i - 1];
-      const current = groupedArray[i];
-      const difference = Math.abs(current.value - prev.value);
+    if (groupedArray.length >= 2) {
+      // Step 3: Calculate absolute differences
+      for (let i = 1; i < groupedArray.length; i++) {
+        const prev = groupedArray[i - 1];
+        const current = groupedArray[i];
+        const difference = Math.abs(current.value - prev.value);
 
-      this.dataSet.push({
-        fromDate: new Date(prev.date),
-        deliveredDate: new Date(current.date),
-        leadTime: difference,
-      });
+        this.dataSet.push({
+          fromDate: new Date(prev.date),
+          deliveredDate: new Date(current.date),
+          leadTime: difference,
+        });
+      }
     }
     return this.dataSet;
   }
 
   getAvgMovingRange() {
-    if (!this.dataSet) {
-      throw new Error('Data set not computed. Call computeDataSet() first.');
+    if (this.dataSet.length <= 0) {
+      throw new Error('Data set is empty');
     }
     return Math.ceil(this.dataSet.reduce((acc, curr) => acc + curr.leadTime, 0) / this.dataSet.length);
   }

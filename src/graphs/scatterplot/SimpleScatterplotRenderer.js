@@ -67,7 +67,7 @@ class SimpleScatterplotRenderer extends ScatterplotRenderer {
       .attr('data-date', (d) => d.deliveredDate)
       .attr('r', 5)
       .attr('cx', (d) => x(d.deliveredDate))
-      .attr('cy', (d) => y(d.leadTime))
+      .attr('cy', (d) => this.applyYScale(y, d.leadTime))
       .style('cursor', 'pointer')
       .attr('fill', this.color)
       .on('click', (event, d) => this.handleMouseClickEvent(event, d));
@@ -77,19 +77,6 @@ class SimpleScatterplotRenderer extends ScatterplotRenderer {
     const focusData = this.updateChartArea(domain);
     this.drawPercentileLines(focusData, this.currentYScale);
     this.displayObservationMarkers(this.observations);
-  }
-
-  setTimeScaleListener(timeScaleSelector) {
-    this.timeScaleSelectElement = document.querySelector(timeScaleSelector);
-    if (this.timeScaleSelectElement) {
-      this.timeScaleSelectElement.value = this.timeScale;
-      this.timeScaleSelectElement.addEventListener('change', (event) => {
-        this.timeScale = event.target.value;
-        this.computeYScale();
-        this.updateGraph(this.selectedTimeRange);
-        this.renderBrush();
-      });
-    }
   }
 
   computePercentileLine(data, percent) {

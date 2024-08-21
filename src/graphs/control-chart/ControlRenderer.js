@@ -23,6 +23,7 @@ class ControlRenderer extends ScatterplotRenderer {
   renderGraph(graphElementSelector) {
     this.drawSvg(graphElementSelector);
     this.drawAxes();
+
     this.avgLeadTime = this.getAvgLeadTime();
     this.topLimit = Math.ceil(this.avgLeadTime + this.avgMovingRange * 2.66);
 
@@ -36,7 +37,12 @@ class ControlRenderer extends ScatterplotRenderer {
     this.drawArea();
     this.drawHorizontalLine(this.y, this.topLimit, 'purple', 'top');
     this.drawHorizontalLine(this.y, this.avgLeadTime, 'orange', 'center');
-    this.bottomLimit > 0 && this.drawHorizontalLine(this.y, this.bottomLimit, 'purple', 'bottom');
+    if (this.bottomLimit > 0) {
+      this.drawHorizontalLine(this.y, this.bottomLimit, 'purple', 'bottom');
+    } else {
+      console.warn('The bottom limit is:', this.bottomLimit);
+    }
+    this.setupMouseLeaveHandler();
   }
 
   drawScatterplot(chartArea, data, x, y) {
@@ -50,7 +56,7 @@ class ControlRenderer extends ScatterplotRenderer {
       .attr('data-date', (d) => d.deliveredDate)
       .attr('r', 5)
       .attr('cx', (d) => x(d.deliveredDate))
-      .attr('cy', (d) => y(d.leadTime))
+      .attr('cy', (d) => this.applyYScale(y, d.leadTime))
       .style('cursor', 'pointer')
       .attr('fill', this.color)
       .on('click', (event, d) => this.handleMouseClickEvent(event, d));
@@ -66,7 +72,7 @@ class ControlRenderer extends ScatterplotRenderer {
     const line = d3
       .line()
       .x((d) => x(d.deliveredDate))
-      .y((d) => y(d.leadTime));
+      .y((d) => this.applyYScale(y, d.leadTime));
     chartArea
       .selectAll('dot-line')
       .data([data])
@@ -86,7 +92,7 @@ class ControlRenderer extends ScatterplotRenderer {
       const line = d3
         .line()
         .x((d) => this.currentXScale(d.deliveredDate))
-        .y((d) => this.currentYScale(d.leadTime));
+        .y((d) => this.applyYScale(this.currentYScale, d.leadTime));
       this.chartArea.selectAll('.dot-line').attr('d', line);
     }
     this.drawHorizontalLine(this.currentYScale, this.topLimit, 'purple', 'top');
