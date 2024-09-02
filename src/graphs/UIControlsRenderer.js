@@ -7,6 +7,9 @@ import * as d3 from 'd3';
  */
 export default class UIControlsRenderer extends Renderer {
   selectedTimeRange;
+  preventEventLoop;
+  chartName;
+  chartType;
   datePropertyName;
   defaultTimeRange;
   #defaultReportingRangeDays = 90;
@@ -17,7 +20,6 @@ export default class UIControlsRenderer extends Renderer {
   brush;
   isManualBrushUpdate = true;
   saveConfigsToBrowserStorage = false;
-  timeIntervalChangeEventName;
 
   constructor(data) {
     super(data);
@@ -45,11 +47,19 @@ export default class UIControlsRenderer extends Renderer {
   updateBrushSelection(newTimeRange) {
     if (newTimeRange) {
       this.isManualBrushUpdate = false;
-      this.selectedTimeRange = newTimeRange;
+      const maxX = newTimeRange[1] > this.x.domain()[1] ? this.x.domain()[1] : newTimeRange[1];
+      const minX = newTimeRange[0] < this.x.domain()[0] ? this.x.domain()[0] : newTimeRange[0];
+      this.selectedTimeRange = [minX, maxX];
+      // Set the flag before emitting an event
+      this.preventEventLoop = true;
+
       this.brushGroup?.call(this.brush)?.call(
         this.brush.move,
-        newTimeRange?.map((d) => this.x(d))
+        this.selectedTimeRange?.map((d) => this.x(d))
       );
+
+      // Reset the flag after the event is handled
+      this.preventEventLoop = false;
     }
   }
 
@@ -100,13 +110,13 @@ export default class UIControlsRenderer extends Renderer {
     if (this.selectedTimeRange) {
       endDate = new Date(this.selectedTimeRange[1]);
       startDate = new Date(this.selectedTimeRange[0]);
-      const diffDays = Number(noOfDays) - calculateDaysBetweenDates(startDate, endDate);
+      const diffDays = Number(noOfDays) - calculateDaysBetweenDates(startDate, endDate).roundedDays;
       if (diffDays < 0) {
         startDate = addDaysToDate(startDate, -Number(diffDays));
       } else {
         endDate = addDaysToDate(endDate, Number(diffDays));
         if (endDate > finalDate) {
-          const diffEndDays = calculateDaysBetweenDates(finalDate, endDate);
+          const diffEndDays = calculateDaysBetweenDates(finalDate, endDate).roundedDays;
           endDate = finalDate;
           startDate = addDaysToDate(startDate, -Number(diffEndDays));
         }
@@ -114,6 +124,9 @@ export default class UIControlsRenderer extends Renderer {
     }
     if (startDate < this.data[0][this.datePropertyName]) {
       startDate = this.data[0][this.datePropertyName];
+    }
+    if (endDate < this.x.domain()[1]) {
+      endDate = this.x.domain()[1];
     }
     return [startDate, endDate];
   }
@@ -153,7 +166,7 @@ export default class UIControlsRenderer extends Renderer {
    * This function changes the time interval state between days, weeks, and months,
    * and then redraws the x-axis based on the selected time range.
    */
-  changeTimeInterval(isManualUpdate, chart) {
+  changeTimeInterval(isManualUpdate) {
     if (isManualUpdate) {
       switch (this.timeInterval) {
         case 'weeks':
@@ -172,7 +185,7 @@ export default class UIControlsRenderer extends Renderer {
       this.timeInterval = this.determineTheAppropriateAxisLabels();
     }
 
-    this.eventBus?.emitEvents(`change-time-interval-${chart}`, this.timeInterval);
+    this.eventBus?.emitEvents(`change-time-interval-${this.chartName}`, this.timeInterval);
   }
 
   determineTheAppropriateAxisLabels() {
