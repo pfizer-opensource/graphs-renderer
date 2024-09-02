@@ -1,33 +1,37 @@
 import ScatterplotRenderer from '../scatterplot/ScatterplotRenderer.js';
 import * as d3 from 'd3';
-import { formatDateToNumeric } from '../../utils/utils.js';
 
 class MovingRangeRenderer extends ScatterplotRenderer {
   color = '#0ea5e9';
   timeScale = 'linear';
 
-  constructor(data, avgMovingRange) {
+  constructor(data, avgMovingRange, chartName) {
     super(data);
     this.avgMovingRange = avgMovingRange;
-    this.chartName = 'moving-range';
+    this.chartName = chartName;
     this.chartType = 'MOVING_RANGE';
     this.dotClass = 'moving-range-dot';
-  }
-
-  setupEventBus(eventBus) {
-    this.eventBus = eventBus;
-    this.eventBus?.addEventListener('change-time-range-control', this.updateBrushSelection.bind(this));
+    this.yAxisLabel = 'Moving Range';
   }
 
   renderGraph(graphElementSelector) {
     this.drawSvg(graphElementSelector);
     this.drawAxes();
-    this.topLimit = this.avgMovingRange;
-    const maxY = this.y.domain()[1] > this.topLimit ? this.y.domain()[1] : this.topLimit + 2;
-    this.y.domain([this.y.domain()[0], maxY]);
+    this.computeGraphLimits();
     this.drawArea();
-    this.drawHorizontalLine(this.y, this.topLimit, 'orange', 'mid');
+    this.drawGraphLimits(this.y);
     this.setupMouseLeaveHandler();
+  }
+
+  drawGraphLimits(yScale) {
+    this.drawHorizontalLine(yScale, this.topLimit, 'purple', 'top-mr', `UPL=${this.topLimit}`);
+    this.drawHorizontalLine(yScale, this.avgMovingRange, 'orange', 'mid-mr', `Avg=${this.avgMovingRange}`);
+  }
+
+  computeGraphLimits() {
+    this.topLimit = 3.27 * this.avgMovingRange;
+    const maxY = this.y.domain()[1] > this.topLimit ? this.y.domain()[1] : this.topLimit + 5;
+    this.y.domain([this.y.domain()[0], maxY]);
   }
 
   populateTooltip(event) {
@@ -36,7 +40,7 @@ class MovingRangeRenderer extends ScatterplotRenderer {
       .style('opacity', 0.9)
       .append('p')
       .style('text-decoration', 'underline')
-      .text(formatDateToNumeric(`${event.date}`));
+      .text(`${event.date}`);
   }
 
   drawScatterplot(chartArea, data, x, y) {
@@ -78,7 +82,7 @@ class MovingRangeRenderer extends ScatterplotRenderer {
       .x((d) => this.currentXScale(d.deliveredDate))
       .y((d) => this.applyYScale(this.currentYScale, d.leadTime));
     this.chartArea.selectAll('.dot-line').attr('d', line);
-    this.drawHorizontalLine(this.currentYScale, this.avgMovingRange, 'orange', 'mid');
+    this.drawGraphLimits(this.currentYScale);
   }
 }
 export default MovingRangeRenderer;
