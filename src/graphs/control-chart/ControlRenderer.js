@@ -6,43 +6,45 @@ class ControlRenderer extends ScatterplotRenderer {
   timeScale = 'linear';
   connectDots = false;
 
-  constructor(data, avgMovingRange) {
+  constructor(data, avgMovingRange, chartName) {
     super(data);
-    this.chartName = 'control';
+    this.chartName = chartName;
     this.chartType = 'CONTROL';
     this.avgMovingRange = avgMovingRange;
     this.dotClass = 'control-dot';
     this.yAxisLabel = 'Days';
   }
 
-  setupEventBus(eventBus) {
-    this.eventBus = eventBus;
-    this.eventBus?.addEventListener('change-time-range-moving-range', this.updateBrushSelection.bind(this));
-  }
-
   renderGraph(graphElementSelector) {
     this.drawSvg(graphElementSelector);
     this.drawAxes();
+    this.drawArea();
+    this.computeGraphLimits();
+    this.drawGraphLimits(this.y);
+    this.setupMouseLeaveHandler();
+  }
 
+  drawGraphLimits(yScale) {
+    this.drawHorizontalLine(yScale, this.topLimit, 'purple', 'top-pb', `UPL=${this.topLimit}`);
+    this.drawHorizontalLine(yScale, this.avgLeadTime, 'orange', 'mid-pb', `Avg=${this.avgLeadTime}`);
+    if (this.bottomLimit > 0) {
+      this.drawHorizontalLine(yScale, this.bottomLimit, 'purple', 'bottom-pb', `LPL=${this.bottomLimit}`);
+    } else {
+      console.warn('The bottom limit is:', this.bottomLimit);
+    }
+  }
+
+  computeGraphLimits() {
     this.avgLeadTime = this.getAvgLeadTime();
     this.topLimit = Math.ceil(this.avgLeadTime + this.avgMovingRange * 2.66);
 
     this.bottomLimit = Math.ceil(this.avgLeadTime - this.avgMovingRange * 2.66);
-    const maxY = this.y.domain()[1] > this.topLimit ? this.y.domain()[1] : this.topLimit + 2;
+    const maxY = this.y.domain()[1] > this.topLimit ? this.y.domain()[1] : this.topLimit + 5;
     let minY = this.y.domain()[0];
-    if (this.bottomLimit > 0) {
-      minY = this.y.domain()[0] < this.bottomLimit ? this.y.domain()[0] : this.bottomLimit - 2;
+    if (this.bottomLimit > 5) {
+      minY = this.y.domain()[0] < this.bottomLimit ? this.y.domain()[0] : this.bottomLimit - 5;
     }
     this.y.domain([minY, maxY]);
-    this.drawArea();
-    this.drawHorizontalLine(this.y, this.topLimit, 'purple', 'top');
-    this.drawHorizontalLine(this.y, this.avgLeadTime, 'orange', 'center');
-    if (this.bottomLimit > 0) {
-      this.drawHorizontalLine(this.y, this.bottomLimit, 'purple', 'bottom');
-    } else {
-      console.warn('The bottom limit is:', this.bottomLimit);
-    }
-    this.setupMouseLeaveHandler();
   }
 
   drawScatterplot(chartArea, data, x, y) {
@@ -95,9 +97,7 @@ class ControlRenderer extends ScatterplotRenderer {
         .y((d) => this.applyYScale(this.currentYScale, d.leadTime));
       this.chartArea.selectAll('.dot-line').attr('d', line);
     }
-    this.drawHorizontalLine(this.currentYScale, this.topLimit, 'purple', 'top');
-    this.drawHorizontalLine(this.currentYScale, this.avgLeadTime, 'orange', 'center');
-    this.bottomLimit > 0 && this.drawHorizontalLine(this.currentYScale, this.bottomLimit, 'purple', 'bottom');
+    this.drawGraphLimits(this.currentYScale);
     this.displayObservationMarkers(this.observations);
   }
 }

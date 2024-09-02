@@ -27,7 +27,7 @@ export function calculateDaysBetweenDates(startDate, endDate, roundDown = true) 
   const startMillis = startDate instanceof Date ? startDate.getTime() : startDate * 1000;
   const endMillis = endDate instanceof Date ? endDate.getTime() : endDate * 1000;
   const diffDays = (endMillis - startMillis) / (1000 * 3600 * 24);
-  return roundDown ? Math.floor(diffDays) : diffDays;
+  return { roundedDays: roundDown ? Math.floor(diffDays) : diffDays, exactTimeDiff: parseFloat(diffDays.toFixed(2)) };
 }
 
 export function areDatesEqual(date1, date2) {
