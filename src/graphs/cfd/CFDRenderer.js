@@ -49,9 +49,11 @@ class CFDRenderer extends UIControlsRenderer {
    *   }
    * ];
    */
-  constructor(data, states) {
+  constructor(data, states, chartName) {
     super(data);
     this.states = states;
+    this.chartType = 'CFD';
+    this.chartName = chartName;
     this.#statesColors = d3.scaleOrdinal().domain(this.states).range(this.#colorPalette);
   }
 
@@ -59,15 +61,23 @@ class CFDRenderer extends UIControlsRenderer {
    * Sets up an event bus for the renderer to listen to events.
    * @param {Object} eventBus - The event bus for communication.
    */
-  setupEventBus(eventBus) {
+  setupEventBus(eventBus, mouseChartsEvents, timeRangeChartsEvents) {
     this.eventBus = eventBus;
-    this.eventBus?.addEventListener('change-time-range-scatterplot', this.updateBrushSelection.bind(this));
-    this.eventBus?.addEventListener('scatterplot-mousemove', (event) => this.#handleMouseEvent(event, 'scatterplot-mousemove'));
-    this.eventBus?.addEventListener('scatterplot-mouseleave', () => this.hideTooltipAndMovingLine());
-    this.eventBus?.addEventListener('change-time-interval-scatterplot', (timeInterval) => {
-      this.timeInterval = timeInterval;
-      this.drawXAxis(this.gx, this.x?.copy().domain(this.selectedTimeRange), this.height, true);
-    });
+    if (this.eventBus && Array.isArray(timeRangeChartsEvents)) {
+      timeRangeChartsEvents.forEach((chart) => {
+        this.eventBus.addEventListener(`change-time-range-${chart}`, (newTimeRange) => {
+          if (!this.preventEventLoop) {
+            this.updateBrushSelection(newTimeRange);
+          }
+        });
+      });
+    }
+    if (this.eventBus && Array.isArray(mouseChartsEvents)) {
+      mouseChartsEvents.forEach((chart) => {
+        this.eventBus?.addEventListener(`${chart}-mousemove`, (event) => this.#handleMouseEvent(event, `${chart}-mousemove`));
+        this.eventBus?.addEventListener(`${chart}-mouseleave`, () => this.hideTooltipAndMovingLine());
+      });
+    }
   }
 
   //region Graph and brush rendering
@@ -101,7 +111,7 @@ class CFDRenderer extends UIControlsRenderer {
         this.selectedTimeRange = selection.map(this.x.invert, this.x);
         this.updateGraph(this.selectedTimeRange);
         if (this.isManualBrushUpdate && this.eventBus) {
-          this.eventBus?.emitEvents('change-time-range-cfd', this.selectedTimeRange);
+          this.eventBus?.emitEvents(`change-time-range-${this.chartName}`, this.selectedTimeRange);
         }
         this.isManualBrushUpdate = true;
       })
@@ -113,7 +123,7 @@ class CFDRenderer extends UIControlsRenderer {
 
     const brushArea = this.#createAreaGenerator(this.x, this.y.copy().range([this.focusHeight - this.margin.top, 4]));
     this.#drawStackedAreaChart(svgBrush, this.#stackedData, brushArea);
-    this.changeTimeInterval(false, 'cfd');
+    this.changeTimeInterval(false);
     this.drawXAxis(svgBrush.append('g'), this.x, this.focusHeight - this.margin.top);
     this.brushGroup = svgBrush.append('g');
     this.brushGroup.call(this.brush).call(
@@ -142,10 +152,10 @@ class CFDRenderer extends UIControlsRenderer {
    */
   updateGraph(domain) {
     const maxY = d3.max(this.#stackedData[this.#stackedData.length - 1], (d) => (d.data.date <= domain[1] ? d[1] : -1));
-    this.reportingRangeDays = calculateDaysBetweenDates(domain[0], domain[1]);
+    this.reportingRangeDays = calculateDaysBetweenDates(domain[0], domain[1]).roundedDays;
     this.currentXScale = this.x.copy().domain(domain);
     this.currentYScale = this.y.copy().domain([0, maxY]).nice();
-    this.changeTimeInterval(false, 'cfd');
+    this.changeTimeInterval(false);
     this.drawXAxis(this.gx, this.currentXScale, this.height, true);
     this.drawYAxis(this.gy, this.currentYScale);
 
@@ -181,8 +191,13 @@ class CFDRenderer extends UIControlsRenderer {
    * @private
    */
   #drawArea() {
-    this.chartArea = this.addClipPath(this.svg, 'cfd-clip');
-    this.chartArea.append('rect').attr('width', '100%').attr('height', '100%').attr('id', 'cfd-area').attr('fill', 'transparent');
+    this.chartArea = this.addClipPath(this.svg, `${this.chartName}-clip`);
+    this.chartArea
+      .append('rect')
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .attr('id', `${this.chartName}-area`)
+      .attr('fill', 'transparent');
     const areaGenerator = this.#createAreaGenerator(this.x, this.y);
     this.#drawStackedAreaChart(this.chartArea, this.#stackedData, areaGenerator);
     this.#drawLegend();
@@ -289,7 +304,7 @@ class CFDRenderer extends UIControlsRenderer {
    */
   setupXAxisControl() {
     this.gx.on('click', () => {
-      this.changeTimeInterval(true, 'cfd');
+      this.changeTimeInterval(true);
       this.drawXAxis(this.gx, this.x.copy().domain(this.selectedTimeRange), this.height, true);
     });
   }
@@ -327,7 +342,7 @@ class CFDRenderer extends UIControlsRenderer {
    */
   drawXAxis(g, x, height = this.height, isGraph = false) {
     let axis;
-    const clipId = 'cfd-x-axis-clip';
+    const clipId = `${this.chartName}-x-axis-clip`;
     this.svg
       .append('clipPath')
       .attr('id', clipId)
@@ -371,7 +386,7 @@ class CFDRenderer extends UIControlsRenderer {
    * @param {Object} observations - Observations data for the renderer.
    */
   setupObservationLogging(observations) {
-    if (observations.length > 0) {
+    if (observations.data.length > 0) {
       this.displayObservationMarkers(observations);
       this.enableMetrics();
     }
@@ -398,7 +413,7 @@ class CFDRenderer extends UIControlsRenderer {
     const trianglePath = `M${-triangleBase / 2},0 L${triangleBase / 2},0 L0,-${triangleHeight} Z`;
     this.chartArea
       .selectAll('observations')
-      .data(observations?.data?.filter((d) => d.chart_type === 'CFD'))
+      .data(observations?.data?.filter((d) => d.chart_type === this.chartType))
       .join('path')
       .attr('class', 'observation-marker')
       .attr('d', trianglePath)
@@ -448,7 +463,7 @@ class CFDRenderer extends UIControlsRenderer {
     this.tooltip = d3.select('body').append('div').attr('class', styles.tooltip).attr('id', 'c-tooltip').style('opacity', 0);
     this.cfdLine = this.chartArea
       .append('line')
-      .attr('id', 'cfd-line')
+      .attr('id', `${this.chartName}-line`)
       .attr('stroke', 'black')
       .attr('y1', 0)
       .attr('y2', y)
@@ -551,8 +566,8 @@ class CFDRenderer extends UIControlsRenderer {
       return; // Exit the function if metrics are already enabled
     }
     this.#areMetricsEnabled = true;
-    this.chartArea.on('mousemove', (event) => this.#handleMouseEvent(event, 'cfd-mousemove'));
-    this.chartArea.on('click', (event) => this.#handleMouseEvent(event, 'cfd-click'));
+    this.chartArea.on('mousemove', (event) => this.#handleMouseEvent(event, `${this.chartName}-mousemove`));
+    this.chartArea.on('click', (event) => this.#handleMouseEvent(event, `${this.chartName}-click`));
     this.#setupMouseLeaveHandler();
   }
 
@@ -566,7 +581,7 @@ class CFDRenderer extends UIControlsRenderer {
   #handleMouseEvent(event, eventName) {
     if (this.#areMetricsEnabled) {
       this.#removeMetricsLines();
-      const coords = d3.pointer(event, d3.select('#cfd-area').node());
+      const coords = d3.pointer(event, d3.select(`#${this.chartName}-area`).node());
       const xPosition = coords[0];
       const yPosition = coords[1];
 
@@ -577,12 +592,13 @@ class CFDRenderer extends UIControlsRenderer {
 
       const date = this.currentXScale.invert(xPosition);
       const cumulativeCountOfWorkItems = this.currentYScale.invert(yPosition);
-      const excludeCycleTime = eventName === 'scatterplot-mousemove';
+      const excludeCycleTime = eventName.includes('mousemove') && !eventName.includes(this.chartName);
 
       const metrics = this.computeMetrics(date, Math.floor(cumulativeCountOfWorkItems), excludeCycleTime);
+
       this.#drawMetricLines(metrics.metricLinesData);
       delete metrics.metricLinesData;
-      const observation = this.observations?.data?.find((o) => o.chart_type === 'CFD' && areDatesEqual(o.date_from, date));
+      const observation = this.observations?.data?.find((o) => o.chart_type === this.chartType && areDatesEqual(o.date_from, date));
       const data = {
         date: date,
         lineX: xPosition,
@@ -624,13 +640,14 @@ class CFDRenderer extends UIControlsRenderer {
       const leadTimeDateBefore = this.#computeLeadTimeDate(currentDeliveredItems, filteredData);
       let { cycleTimeDateBefore, averageCycleTime, biggestCycleTime, currentStateCumulativeCount, cycleTimesByState } =
         this.computeCycleTimeAndLeadTimeMetrics(currentDataEntry, filteredData, currentDate, currentStateIndex);
-      const averageLeadTime = leadTimeDateBefore ? Math.floor(calculateDaysBetweenDates(leadTimeDateBefore, currentDate)) : null;
+      const averageLeadTime = leadTimeDateBefore
+        ? Math.floor(calculateDaysBetweenDates(leadTimeDateBefore, currentDate).roundedDays)
+        : null;
       const noOfItemsBefore = this.#getNoOfItems(currentDataEntry, this.states[this.states.indexOf('delivered')]);
       const noOfItemsAfter = this.#getNoOfItems(currentDataEntry, this.states[this.states.indexOf('analysis_active')]);
 
       const wip = noOfItemsAfter - noOfItemsBefore;
       const throughput = averageLeadTime ? parseFloat((wip / averageLeadTime).toFixed(1)) : undefined;
-
       excludeCycleTime && (averageCycleTime = null);
       return {
         currentState: this.states[currentStateIndex],
@@ -664,7 +681,9 @@ class CFDRenderer extends UIControlsRenderer {
     for (let i = 0; i < this.states.length - 1; i++) {
       let stateCumulativeCount = this.#getNoOfItems(currentDataEntry, this.states[i]);
       let cycleTimeDate = this.#computeCycleTimeDate(stateCumulativeCount, i, filteredData);
-      cycleTimesByState[this.states[i + 1]] = cycleTimeDate ? Math.floor(calculateDaysBetweenDates(cycleTimeDate, currentDate)) : null;
+      cycleTimesByState[this.states[i + 1]] = cycleTimeDate
+        ? Math.floor(calculateDaysBetweenDates(cycleTimeDate, currentDate).roundedDays)
+        : null;
       if (cycleTimesByState[this.states[i + 1]] > biggestCycleTime) {
         biggestCycleTime = cycleTimesByState[this.states[i + 1]];
       }

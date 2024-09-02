@@ -1,5 +1,3 @@
-import * as d3 from 'd3';
-
 class MovingRangeGraph {
   dataSet = [];
   constructor(data) {
@@ -7,28 +5,15 @@ class MovingRangeGraph {
   }
 
   computeDataSet() {
-    // Step 1: Group data by date
-    const grouped = d3.group(this.data, (d) => d.deliveredDate.toDateString());
-
-    const groupedArray = Array.from(grouped, ([key, value]) => ({
-      date: key,
-      value: Math.ceil(value.map((v) => v.leadTime).reduce((acc, cur) => acc + cur, 0) / value.length),
-    }));
-
-    // Sort the groupedArray by date to ensure correct ordering for difference calculation
-    groupedArray.sort((a, b) => new Date(a.date) - new Date(b.date));
+    this.data.sort((t1, t2) => t1.deliveredDate - t2.deliveredDate || t1.ticketId.localeCompare(t2.ticketId));
     this.dataSet = [];
-    if (groupedArray.length >= 2) {
-      // Step 3: Calculate absolute differences
-      for (let i = 1; i < groupedArray.length; i++) {
-        const prev = groupedArray[i - 1];
-        const current = groupedArray[i];
-        const difference = Math.abs(current.value - prev.value);
-
+    if (this.data.length >= 2) {
+      for (let i = 1; i < this.data.length; i++) {
         this.dataSet.push({
-          fromDate: new Date(prev.date),
-          deliveredDate: new Date(current.date),
-          leadTime: difference,
+          fromDate: new Date(this.data[i - 1].deliveredDate),
+          deliveredDate: new Date(this.data[i].deliveredTimestamp * 1000),
+          // leadTime: Math.floor(Math.abs(Number(this.data[i].exactLeadTime) - Number(this.data[i - 1].exactLeadTime))),
+          leadTime: Math.floor(Math.abs(Number(this.data[i].leadTime) - Number(this.data[i - 1].leadTime))),
         });
       }
     }

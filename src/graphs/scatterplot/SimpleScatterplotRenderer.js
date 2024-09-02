@@ -28,25 +28,12 @@ class SimpleScatterplotRenderer extends ScatterplotRenderer {
    * ];
    * @param workTicketsURL - The tickets base url
    */
-  constructor(data, workTicketsURL) {
+  constructor(data, workTicketsURL, chartName) {
     super(data);
     this.workTicketsURL = workTicketsURL;
-    this.chartName = 'scatterplot';
+    this.chartName = chartName;
     this.chartType = 'SCATTERPLOT';
     this.dotClass = 'scatterplot-dot';
-  }
-
-  /**
-   * Sets up an event bus for the renderer to listen to events.
-   * @param {Object} eventBus - The event bus for communication.
-   */
-  setupEventBus(eventBus) {
-    this.eventBus = eventBus;
-    this.eventBus?.addEventListener('change-time-range-cfd', this.updateBrushSelection.bind(this));
-    this.eventBus?.addEventListener('change-time-interval-cfd', (timeInterval) => {
-      this.timeInterval = timeInterval;
-      this.drawXAxis(this.gx, this.x.copy().domain(this.selectedTimeRange), this.height, true);
-    });
   }
 
   renderGraph(graphElementSelector) {

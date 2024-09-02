@@ -16,7 +16,6 @@ class ScatterplotRenderer extends UIControlsRenderer {
   xAxisLabel = 'Time';
   yAxisLabel = '# of delivery days';
   timeScale = 'logarithmic';
-  timeIntervalChangeEventName = 'change-time-interval-scatterplot';
   workTicketsURL = '#';
 
   /**
@@ -46,9 +45,17 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * Sets up an event bus for the renderer to listen to events.
    * @param {Object} eventBus - The event bus for communication.
    */
-  setupEventBus(eventBus) {
+  setupEventBus(eventBus, timeRangeChartsEvents) {
     this.eventBus = eventBus;
-    this.eventBus?.addEventListener('change-time-range-cfd', this.updateBrushSelection.bind(this));
+    if (this.eventBus && Array.isArray(timeRangeChartsEvents)) {
+      timeRangeChartsEvents.forEach((chart) => {
+        this.eventBus.addEventListener(`change-time-range-${chart}`, (newTimeRange) => {
+          if (!this.preventEventLoop) {
+            this.updateBrushSelection(newTimeRange);
+          }
+        });
+      });
+    }
     this.eventBus?.addEventListener('change-time-interval-cfd', (timeInterval) => {
       this.timeInterval = timeInterval;
       this.drawXAxis(this.gx, this.x?.copy().domain(this.selectedTimeRange), this.height, true);
@@ -93,9 +100,9 @@ class ScatterplotRenderer extends UIControlsRenderer {
         }
       });
 
-    const brushArea = this.addClipPath(svgBrush, 'scatterplot-brush-clip', this.width, this.focusHeight - this.margin.top + 1);
+    const brushArea = this.addClipPath(svgBrush, `${this.chartName}-brush-clip`, this.width, this.focusHeight - this.margin.top + 1);
     this.drawScatterplot(brushArea, this.data, this.x, this.y.copy().range([this.focusHeight - this.margin.top - 2, 2]));
-    this.changeTimeInterval(false, `${this.chartName}`);
+    this.changeTimeInterval(false);
     this.drawXAxis(svgBrush.append('g'), this.x, this.focusHeight - this.margin.top);
     this.brushGroup = brushArea;
     this.brushGroup.call(this.brush).call(
@@ -127,11 +134,11 @@ class ScatterplotRenderer extends UIControlsRenderer {
   updateChartArea(domain) {
     const maxValue = d3.max(this.data, (d) => (d.deliveredDate <= domain[1] && d.deliveredDate >= domain[0] ? d.leadTime : -1));
     const maxY = this.topLimit ? Math.max(maxValue, this.topLimit + 2) : maxValue;
-    this.reportingRangeDays = calculateDaysBetweenDates(domain[0], domain[1]);
+    this.reportingRangeDays = calculateDaysBetweenDates(domain[0], domain[1]).roundedDays;
     this.currentXScale = this.x.copy().domain(domain);
     this.currentYScale = this.y.copy().domain([1, maxY]).nice();
     const focusData = this.data.filter((d) => d.deliveredDate <= domain[1] && d.deliveredDate >= domain[0]);
-    this.changeTimeInterval(false, `${this.chartName}`);
+    this.changeTimeInterval(false);
     this.drawXAxis(this.gx, this.currentXScale, this.height, true);
     this.drawYAxis(this.gy, this.currentYScale);
 
@@ -222,7 +229,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
    */
   setupXAxisControl() {
     this.gx.on('click', () => {
-      this.changeTimeInterval(true, `${this.chartName}`);
+      this.changeTimeInterval(true);
       this.drawXAxis(this.gx, this.x?.copy().domain(this.selectedTimeRange), this.height, true);
     });
   }
@@ -242,30 +249,32 @@ class ScatterplotRenderer extends UIControlsRenderer {
   }
 
   computeYScale() {
-    const yDomain = [1, d3.max(this.data, (d) => d.leadTime)];
+    // Start domain from a small positive value: 0.6 to avoid log(0) issues
+    const yDomain = [0.6, d3.max(this.data, (d) => d.leadTime)];
+
     if (this.timeScale === 'logarithmic') {
       this.y = d3
         .scaleLog()
         .base(2)
         .domain(yDomain)
-        .range([this.height - 4, 0])
+        .range([this.height - 34, 0])
         .nice();
     } else if (this.timeScale === 'linear') {
-      this.y = this.computeLinearScale(yDomain, [this.height - 4, 0]).nice();
+      this.y = this.computeLinearScale([0, d3.max(this.data, (d) => d.leadTime)], [this.height - 4, 0]).nice();
     }
   }
 
   applyYScale(yScale, value) {
     if (this.timeScale === 'logarithmic' && value <= 0) {
       // Handle zero or negative values explicitly
-      return yScale(1e-6);
+      return yScale(0.6);
     } else {
       return yScale(value);
     }
   }
 
   computeXScale() {
-    const bufferDays = 2;
+    const bufferDays = 5;
     const xExtent = d3.extent(this.data, (d) => d.deliveredDate);
     const minDate = new Date(xExtent[0]);
     const maxDate = new Date(xExtent[1]);
@@ -330,7 +339,29 @@ class ScatterplotRenderer extends UIControlsRenderer {
    */
   drawYAxis(gy, y) {
     const yAxis = d3.axisLeft(y).tickSize(-this.width);
+
     gy.call(yAxis).selectAll('.tick line').attr('opacity', 0.1);
+
+    if (this.timeScale === 'logarithmic') {
+      // Manually add tick for 0.6 value which is rendered as value 0
+      gy.append('g')
+        .attr('class', 'tick')
+        .attr('transform', `translate(0, ${y(0.6)})`) // Position tick line at y(0.6)
+        .append('line')
+        .attr('x2', this.width)
+        .attr('stroke', 'black')
+        .attr('opacity', 0.9);
+
+      // Manually add text label for 0.6 value is rendered as value 0
+      gy.append('g')
+        .attr('class', 'tick')
+        .attr('transform', `translate(0, ${y(0.6)})`) // Position text at y(0.6)
+        .append('text')
+        .attr('x', -4)
+        .attr('dy', '.32em')
+        .attr('stroke', 'black')
+        .text('0');
+    }
   }
 
   //endregion
@@ -342,7 +373,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * @param {Object} observations - Observations data for the renderer.
    */
   setupObservationLogging(observations) {
-    if (observations.length > 0) {
+    if (observations.data.length > 0) {
       this.displayObservationMarkers(observations);
       this.enableMetrics();
     }
@@ -521,12 +552,19 @@ class ScatterplotRenderer extends UIControlsRenderer {
 
   //region Percentile lines rendering
 
+  #getTextWidth(text, fontSize = '12px', fontFamily = 'Arial') {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    context.font = `${fontSize} ${fontFamily}`;
+    const width = context.measureText(text).width;
+    return width;
+  }
+
   drawHorizontalLine(yScale, yValue, color, id, text = '') {
     let lineEl = this.svg.select('#line-' + id);
     let textEl = this.svg.select('#text-' + id);
 
     if (lineEl.empty()) {
-      // If the line does not exist, create it
       lineEl = this.svg
         .append('line')
         .attr('x1', 0)
@@ -535,20 +573,24 @@ class ScatterplotRenderer extends UIControlsRenderer {
         .attr('class', 'average-line')
         .attr('stroke-width', 3)
         .attr('stroke-dasharray', '7');
-
       textEl = this.svg
         .append('text')
         .attr('text-anchor', 'start')
-        .attr('x', this.width + 2)
         .attr('id', 'text-' + id)
         .style('font-size', '12px');
     }
+
     lineEl.attr('y1', yScale(yValue)).attr('y2', yScale(yValue)).attr('stroke', color);
-    text &&
+    if (text) {
       textEl
-        .attr('y', yScale(yValue) + 4)
         .text(text)
-        .attr('fill', color);
+        .attr('fill', color)
+        .attr('y', yScale(yValue) - 4);
+      // Measure text width
+      const textWidth = this.#getTextWidth(text, '12px');
+      const adjustedX = this.width - textWidth;
+      textEl.attr('x', adjustedX);
+    }
   }
 
   //endregion
