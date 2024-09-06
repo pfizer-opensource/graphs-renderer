@@ -641,7 +641,7 @@ class CFDRenderer extends UIControlsRenderer {
       let { cycleTimeDateBefore, averageCycleTime, biggestCycleTime, currentStateCumulativeCount, cycleTimesByState } =
         this.computeCycleTimeAndLeadTimeMetrics(currentDataEntry, filteredData, currentDate, currentStateIndex);
       const averageLeadTime = leadTimeDateBefore
-        ? Math.floor(calculateDaysBetweenDates(leadTimeDateBefore, currentDate).roundedDays)
+        ? Math.floor(calculateDaysBetweenDates(leadTimeDateBefore, currentDate).exactTimeDiff)
         : null;
       const noOfItemsBefore = this.#getNoOfItems(currentDataEntry, this.states[this.states.indexOf('delivered')]);
       const noOfItemsAfter = this.#getNoOfItems(currentDataEntry, this.states[this.states.indexOf('analysis_active')]);
@@ -682,7 +682,7 @@ class CFDRenderer extends UIControlsRenderer {
       let stateCumulativeCount = this.#getNoOfItems(currentDataEntry, this.states[i]);
       let cycleTimeDate = this.#computeCycleTimeDate(stateCumulativeCount, i, filteredData);
       cycleTimesByState[this.states[i + 1]] = cycleTimeDate
-        ? Math.floor(calculateDaysBetweenDates(cycleTimeDate, currentDate).roundedDays)
+        ? Math.floor(calculateDaysBetweenDates(cycleTimeDate, currentDate).exactTimeDiff)
         : null;
       if (cycleTimesByState[this.states[i + 1]] > biggestCycleTime) {
         biggestCycleTime = cycleTimesByState[this.states[i + 1]];
