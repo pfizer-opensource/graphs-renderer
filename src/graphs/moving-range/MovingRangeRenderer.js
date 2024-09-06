@@ -5,9 +5,10 @@ class MovingRangeRenderer extends ScatterplotRenderer {
   color = '#0ea5e9';
   timeScale = 'linear';
 
-  constructor(data, avgMovingRange, chartName) {
+  constructor(data, avgMovingRange, workTicketsURL, chartName) {
     super(data);
     this.avgMovingRange = avgMovingRange;
+    this.workTicketsURL = workTicketsURL;
     this.chartName = chartName;
     this.chartType = 'MOVING_RANGE';
     this.dotClass = 'moving-range-dot';
@@ -38,9 +39,19 @@ class MovingRangeRenderer extends ScatterplotRenderer {
     this.tooltip
       .style('pointer-events', 'auto')
       .style('opacity', 0.9)
-      .append('p')
+      .append('div')
+      .append('a')
       .style('text-decoration', 'underline')
-      .text(`${event.date}`);
+      .attr('href', `${this.workTicketsURL}/${event.workItem1}`)
+      .text(event.workItem1)
+      .attr('target', '_blank');
+    this.tooltip
+      .append('div')
+      .append('a')
+      .style('text-decoration', 'underline')
+      .attr('href', `${this.workTicketsURL}/${event.workItem2}`)
+      .text(event.workItem1)
+      .attr('target', '_blank');
   }
 
   drawScatterplot(chartArea, data, x, y) {
@@ -55,7 +66,7 @@ class MovingRangeRenderer extends ScatterplotRenderer {
       .attr('cy', (d) => this.applyYScale(y, d.leadTime))
       .style('cursor', 'pointer')
       .attr('fill', this.color)
-      .on('mouseover', (event, d) => this.handleMouseClickEvent(event, { date: d.deliveredDate }));
+      .on('click', (event, d) => this.handleMouseClickEvent(event, { ...d, date: d.deliveredDate }));
 
     // Define the line generator
     const line = d3

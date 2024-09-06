@@ -65,19 +65,16 @@ class ScatterplotGraph {
     this.data.forEach((ticket) => {
       if (ticket.delivered) {
         const deliveredDate = new Date(ticket.delivered * 1000);
-        deliveredDate.setHours(0, 0, 0, 0);
         const scatterplotTicket = {
           deliveredDate: deliveredDate,
           deliveredTimestamp: ticket.delivered,
           leadTime: 0,
-          exactLeadTime: 0,
           ticketId: ticket.work_id,
         };
         for (const state of this.states) {
           if (ticket[state]) {
             const diff = calculateDaysBetweenDates(ticket[state], ticket.delivered);
-            scatterplotTicket.leadTime = diff.roundedDays;
-            scatterplotTicket.exactLeadTime = diff.exactTimeDiff;
+            scatterplotTicket.leadTime = diff.exactTimeDiff;
             break;
           }
         }
