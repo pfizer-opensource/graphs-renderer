@@ -12,8 +12,9 @@ class MovingRangeGraph {
         this.dataSet.push({
           fromDate: new Date(this.data[i - 1].deliveredDate),
           deliveredDate: new Date(this.data[i].deliveredTimestamp * 1000),
-          // leadTime: Math.floor(Math.abs(Number(this.data[i].exactLeadTime) - Number(this.data[i - 1].exactLeadTime))),
-          leadTime: Math.floor(Math.abs(Number(this.data[i].leadTime) - Number(this.data[i - 1].leadTime))),
+          leadTime: Math.abs(Number(this.data[i].leadTime) - Number(this.data[i - 1].leadTime)),
+          workItem1: this.data[i - 1].ticketId,
+          workItem2: this.data[i].ticketId,
         });
       }
     }

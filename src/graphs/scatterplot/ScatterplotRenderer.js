@@ -250,7 +250,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
 
   computeYScale() {
     // Start domain from a small positive value: 0.6 to avoid log(0) issues
-    const yDomain = [0.6, d3.max(this.data, (d) => d.leadTime)];
+    const yDomain = [0.5, d3.max(this.data, (d) => d.leadTime)];
 
     if (this.timeScale === 'logarithmic') {
       this.y = d3
@@ -265,9 +265,9 @@ class ScatterplotRenderer extends UIControlsRenderer {
   }
 
   applyYScale(yScale, value) {
-    if (this.timeScale === 'logarithmic' && value <= 0) {
+    if (this.timeScale === 'logarithmic' && value <= 0.5) {
       // Handle zero or negative values explicitly
-      return yScale(0.6);
+      return yScale(0.5);
     } else {
       return yScale(value);
     }
@@ -302,7 +302,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
           .append('rect')
           .attr('class', 'axis-background')
           .attr('x', 0)
-          .attr('y', 0)
+          .attr('y', 4)
           .attr('width', this.width)
           .attr('height', axisHeight)
           .attr('fill', 'gray')
@@ -312,7 +312,11 @@ class ScatterplotRenderer extends UIControlsRenderer {
       const xAxisGroup = g.attr('class', 'x-axis-group').attr('transform', `translate(0, ${height})`);
       xAxisGroup.call(axis);
       xAxisGroup.selectAll('.tick line').attr('stroke', 'black').attr('opacity', 0.3).attr('y1', 15).attr('y2', -this.height);
-      xAxisGroup.selectAll('.tick text').attr('fill', 'black').attr('y', axisHeight).attr('dy', '10px');
+      xAxisGroup
+        .selectAll('.tick text')
+        .attr('fill', 'black')
+        .attr('y', axisHeight + 6)
+        .attr('dy', '10px');
       xAxisGroup.select('.domain').remove();
       grayBand.on('mouseover', function () {
         d3.select(this)
@@ -343,10 +347,10 @@ class ScatterplotRenderer extends UIControlsRenderer {
     gy.call(yAxis).selectAll('.tick line').attr('opacity', 0.1);
 
     if (this.timeScale === 'logarithmic') {
-      // Manually add tick for 0.6 value which is rendered as value 0
+      // Manually add tick for 0.5 value which is rendered as value 0
       gy.append('g')
         .attr('class', 'tick')
-        .attr('transform', `translate(0, ${y(0.6)})`) // Position tick line at y(0.6)
+        .attr('transform', `translate(0, ${y(0.5)})`) // Position tick line at y(0.5)
         .append('line')
         .attr('x2', this.width)
         .attr('stroke', 'black')
@@ -355,7 +359,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
       // Manually add text label for 0.6 value is rendered as value 0
       gy.append('g')
         .attr('class', 'tick')
-        .attr('transform', `translate(0, ${y(0.6)})`) // Position text at y(0.6)
+        .attr('transform', `translate(0, ${y(0.5)})`) // Position text at y(0.5)
         .append('text')
         .attr('x', -4)
         .attr('dy', '.32em')
@@ -515,8 +519,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
    */
   handleMouseClickEvent(event, d) {
     let data = {
-      date: d.date,
-      ticketId: d.ticketId,
+      ...d,
       tooltipLeft: event.pageX,
       tooltipTop: event.pageY,
     };
@@ -531,8 +534,8 @@ class ScatterplotRenderer extends UIControlsRenderer {
         observationBody: observation?.body,
         observationId: observation?.id,
       };
-      this.eventBus?.emitEvents(`${this.chartName}-click`, data);
     }
+    this.eventBus?.emitEvents(`${this.chartName}-click`, data);
     this.showTooltip(data);
   }
 
