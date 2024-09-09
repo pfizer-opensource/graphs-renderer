@@ -8,6 +8,7 @@ import MovingRangeRenderer from './graphs/moving-range/MovingRangeRenderer.js';
 import ControlRenderer from './graphs/control-chart/ControlRenderer.js';
 import HistogramRenderer from './graphs/histogram/HistogramRenderer.js';
 import { eventBus } from './utils/EventBus.js';
+import { processServiceData } from './data-processor.js';
 import ObservationLoggingService from './graphs/ObservationLoggingService.js';
 
 export {
@@ -22,4 +23,5 @@ export {
   HistogramRenderer,
   ObservationLoggingService,
   eventBus,
+  processServiceData,
 };

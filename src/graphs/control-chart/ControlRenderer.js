@@ -47,6 +47,15 @@ class ControlRenderer extends ScatterplotRenderer {
     this.y.domain([minY, maxY]);
   }
 
+  populateTooltip(event) {
+    this.tooltip
+      .style('pointer-events', 'auto')
+      .style('opacity', 0.9)
+      .append('p')
+      .style('text-decoration', 'underline')
+      .text(`${event.deliveredDate}`);
+  }
+
   drawScatterplot(chartArea, data, x, y) {
     chartArea
       .selectAll(`.${this.dotClass}`)
