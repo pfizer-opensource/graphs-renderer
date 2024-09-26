@@ -125,7 +125,7 @@ async function renderGraphs(data, serviceId) {
     //The Load and reset config input buttons css selectors
     const loadConfigInputSelector = "#load-config-input";
     const resetConfigInputSelector = "#reset-config-input";
-    //The controls div css selector that contains the reporting range days input and the x axis labeling units dropdown
+    //The controls div css selector that contains the reporting range days input and the x axes labeling units dropdown
     const controlsElementSelector = "#controls-div";
 
     const {

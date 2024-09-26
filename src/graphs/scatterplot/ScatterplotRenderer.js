@@ -17,6 +17,8 @@ class ScatterplotRenderer extends UIControlsRenderer {
   yAxisLabel = '# of delivery days';
   timeScale = 'logarithmic';
   workTicketsURL = '#';
+  baselineStartDate;
+  baselineEndDate;
 
   /**
    * Creates a ScatterplotRenderer instance
@@ -39,6 +41,8 @@ class ScatterplotRenderer extends UIControlsRenderer {
    */
   constructor(data) {
     super(data);
+    this.baselineStartDate = this.data[0].deliveredDate;
+    this.baselineEndDate = this.data[this.data.length - 1].deliveredDate;
   }
 
   /**
@@ -218,6 +222,23 @@ class ScatterplotRenderer extends UIControlsRenderer {
         this.computeYScale();
         this.updateGraph(this.selectedTimeRange);
         this.renderBrush();
+      });
+    }
+  }
+
+  setBaselineListener(baselineStartDateSelector, baselineEndDateSelector) {
+    this.baselineStartDateElement = document.querySelector(baselineStartDateSelector);
+    if (this.baselineStartDateElement) {
+      this.baselineStartDateElement.addEventListener('change', (event) => {
+        this.baselineStartDate = new Date(event.target.value);
+        this.updateGraph(this.selectedTimeRange);
+      });
+    }
+    this.baselineEndDateElement = document.querySelector(baselineEndDateSelector);
+    if (this.baselineEndDateElement) {
+      this.baselineEndDateElement.addEventListener('change', (event) => {
+        this.baselineEndDate = new Date(event.target.value);
+        this.updateGraph(this.selectedTimeRange);
       });
     }
   }

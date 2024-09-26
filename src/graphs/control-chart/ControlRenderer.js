@@ -6,11 +6,11 @@ class ControlRenderer extends ScatterplotRenderer {
   timeScale = 'linear';
   connectDots = false;
 
-  constructor(data, avgMovingRange, chartName) {
+  constructor(data, avgMovingRangeFunc, chartName) {
     super(data);
     this.chartName = chartName;
     this.chartType = 'CONTROL';
-    this.avgMovingRange = avgMovingRange;
+    this.avgMovingRangeFunc = avgMovingRangeFunc;
     this.dotClass = 'control-dot';
     this.yAxisLabel = 'Days';
   }
@@ -27,6 +27,7 @@ class ControlRenderer extends ScatterplotRenderer {
   drawGraphLimits(yScale) {
     this.drawHorizontalLine(yScale, this.topLimit, 'purple', 'top-pb', `UPL=${this.topLimit}`);
     this.drawHorizontalLine(yScale, this.avgLeadTime, 'orange', 'mid-pb', `Avg=${this.avgLeadTime}`);
+
     if (this.bottomLimit > 0) {
       this.drawHorizontalLine(yScale, this.bottomLimit, 'purple', 'bottom-pb', `LPL=${this.bottomLimit}`);
     } else {
@@ -36,9 +37,10 @@ class ControlRenderer extends ScatterplotRenderer {
 
   computeGraphLimits() {
     this.avgLeadTime = this.getAvgLeadTime();
-    this.topLimit = Math.ceil(this.avgLeadTime + this.avgMovingRange * 2.66);
+    const avgMovingRange = this.avgMovingRangeFunc(this.baselineStartDate, this.baselineEndDate);
+    this.topLimit = Math.ceil(this.avgLeadTime + avgMovingRange * 2.66);
 
-    this.bottomLimit = Math.ceil(this.avgLeadTime - this.avgMovingRange * 2.66);
+    this.bottomLimit = Math.ceil(this.avgLeadTime - avgMovingRange * 2.66);
     const maxY = this.y.domain()[1] > this.topLimit ? this.y.domain()[1] : this.topLimit + 5;
     let minY = this.y.domain()[0];
     if (this.bottomLimit > 5) {
@@ -106,6 +108,7 @@ class ControlRenderer extends ScatterplotRenderer {
         .y((d) => this.applyYScale(this.currentYScale, d.leadTime));
       this.chartArea.selectAll('.dot-line').attr('d', line);
     }
+    this.computeGraphLimits();
     this.drawGraphLimits(this.currentYScale);
     this.displayObservationMarkers(this.observations);
   }
