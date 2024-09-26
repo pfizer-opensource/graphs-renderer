@@ -5,9 +5,9 @@ class MovingRangeRenderer extends ScatterplotRenderer {
   color = '#0ea5e9';
   timeScale = 'linear';
 
-  constructor(data, avgMovingRange, workTicketsURL, chartName) {
+  constructor(data, avgMovingRangeFunc, workTicketsURL, chartName) {
     super(data);
-    this.avgMovingRange = avgMovingRange;
+    this.avgMovingRangeFunc = avgMovingRangeFunc;
     this.workTicketsURL = workTicketsURL;
     this.chartName = chartName;
     this.chartType = 'MOVING_RANGE';
@@ -25,12 +25,13 @@ class MovingRangeRenderer extends ScatterplotRenderer {
   }
 
   drawGraphLimits(yScale) {
+    const avgMovingRange = this.avgMovingRangeFunc(this.baselineStartDate, this.baselineEndDate);
     this.drawHorizontalLine(yScale, this.topLimit, 'purple', 'top-mr', `UPL=${this.topLimit}`);
-    this.drawHorizontalLine(yScale, this.avgMovingRange, 'orange', 'mid-mr', `Avg=${this.avgMovingRange}`);
+    this.drawHorizontalLine(yScale, avgMovingRange, 'orange', 'mid-mr', `Avg=${avgMovingRange}`);
   }
 
   computeGraphLimits() {
-    this.topLimit = 3.27 * this.avgMovingRange;
+    this.topLimit = 3.27 * this.avgMovingRangeFunc(this.baselineStartDate, this.baselineEndDate);
     const maxY = this.y.domain()[1] > this.topLimit ? this.y.domain()[1] : this.topLimit + 5;
     this.y.domain([this.y.domain()[0], maxY]);
   }
@@ -93,6 +94,7 @@ class MovingRangeRenderer extends ScatterplotRenderer {
       .x((d) => this.currentXScale(d.deliveredDate))
       .y((d) => this.applyYScale(this.currentYScale, d.leadTime));
     this.chartArea.selectAll('.dot-line').attr('d', line);
+    this.computeGraphLimits();
     this.drawGraphLimits(this.currentYScale);
   }
 }

@@ -1,5 +1,6 @@
 class MovingRangeGraph {
   dataSet = [];
+
   constructor(data) {
     this.data = data;
   }
@@ -21,11 +22,14 @@ class MovingRangeGraph {
     return this.dataSet;
   }
 
-  getAvgMovingRange() {
+  getAvgMovingRange(startDate, endDate) {
     if (this.dataSet.length <= 0) {
       throw new Error('Data set is empty');
     }
-    return Math.ceil(this.dataSet.reduce((acc, curr) => acc + curr.leadTime, 0) / this.dataSet.length);
+    return Math.ceil(
+      this.dataSet.filter((d) => d.deliveredDate >= startDate && d.deliveredDate <= endDate).reduce((acc, curr) => acc + curr.leadTime, 0) /
+        this.dataSet.length
+    );
   }
 }
 
