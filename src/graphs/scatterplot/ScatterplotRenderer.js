@@ -603,13 +603,12 @@ class ScatterplotRenderer extends UIControlsRenderer {
         .attr('id', 'text-' + id)
         .style('font-size', '12px');
     }
-
-    lineEl.attr('y1', yScale(yValue)).attr('y2', yScale(yValue)).attr('stroke', color);
+    lineEl.attr('y1', this.applyYScale(yScale, yValue)).attr('y2', this.applyYScale(yScale, yValue)).attr('stroke', color);
     if (text) {
       textEl
         .text(text)
         .attr('fill', color)
-        .attr('y', yScale(yValue) - 4);
+        .attr('y', this.applyYScale(yScale, yValue) - 4);
       // Measure text width
       const textWidth = this.#getTextWidth(text, '12px');
       const adjustedX = this.width - textWidth;

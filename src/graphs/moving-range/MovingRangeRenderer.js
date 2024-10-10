@@ -18,8 +18,8 @@ class MovingRangeRenderer extends ScatterplotRenderer {
   renderGraph(graphElementSelector) {
     this.drawSvg(graphElementSelector);
     this.drawAxes();
-    this.computeGraphLimits();
     this.drawArea();
+    this.computeGraphLimits();
     this.drawGraphLimits(this.y);
     this.setupMouseLeaveHandler();
   }
