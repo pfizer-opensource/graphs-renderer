@@ -77,7 +77,8 @@ class ControlRenderer extends ScatterplotRenderer {
   }
 
   getAvgLeadTime() {
-    return Math.ceil(this.data.reduce((acc, curr) => acc + curr.leadTime, 0) / this.data.length);
+    const filteredData = this.data.filter((d) => d.deliveredDate >= this.baselineStartDate && d.deliveredDate <= this.baselineEndDate);
+    return Math.ceil(filteredData.reduce((acc, curr) => acc + curr.leadTime, 0) / filteredData.length);
   }
 
   generateLines(chartArea, data, x, y) {
@@ -100,6 +101,7 @@ class ControlRenderer extends ScatterplotRenderer {
   }
 
   updateGraph(domain) {
+    this.computeGraphLimits();
     this.updateChartArea(domain);
     if (this.connectDots) {
       const line = d3
@@ -108,7 +110,6 @@ class ControlRenderer extends ScatterplotRenderer {
         .y((d) => this.applyYScale(this.currentYScale, d.leadTime));
       this.chartArea.selectAll('.dot-line').attr('d', line);
     }
-    this.computeGraphLimits();
     this.drawGraphLimits(this.currentYScale);
     this.displayObservationMarkers(this.observations);
   }
