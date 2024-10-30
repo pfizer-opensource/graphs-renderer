@@ -26,10 +26,8 @@ class MovingRangeGraph {
     if (this.dataSet.length <= 0) {
       throw new Error('Data set is empty');
     }
-    return Math.ceil(
-      this.dataSet.filter((d) => d.deliveredDate >= startDate && d.deliveredDate <= endDate).reduce((acc, curr) => acc + curr.leadTime, 0) /
-        this.dataSet.length
-    );
+    const filteredData = this.dataSet.filter((d) => d.deliveredDate >= startDate && d.deliveredDate <= endDate);
+    return Math.ceil(filteredData.reduce((acc, curr) => acc + curr.leadTime, 0) / filteredData.length);
   }
 }
 

@@ -88,13 +88,13 @@ class MovingRangeRenderer extends ScatterplotRenderer {
   }
 
   updateGraph(domain) {
+    this.computeGraphLimits();
     this.updateChartArea(domain);
     const line = d3
       .line()
       .x((d) => this.currentXScale(d.deliveredDate))
       .y((d) => this.applyYScale(this.currentYScale, d.leadTime));
     this.chartArea.selectAll('.dot-line').attr('d', line);
-    this.computeGraphLimits();
     this.drawGraphLimits(this.currentYScale);
   }
 }
