@@ -41,6 +41,7 @@ class ScatterplotGraph {
     this.data = data;
     this.states = states;
   }
+
   /**
    * Computes the dataSet for the Scatterplot and Histogram graphs.
    *
@@ -70,6 +71,7 @@ class ScatterplotGraph {
           deliveredTimestamp: ticket.delivered,
           leadTime: 0,
           ticketId: ticket.work_id,
+          ticketType: ticket.indexes?.find((i) => i.name === 'ticket_type')?.value || '',
         };
         for (const state of this.states) {
           if (ticket[state]) {
