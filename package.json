@@ -24,7 +24,7 @@
     "babel-loader": "^9.2.1",
     "d3": "^7.6.1",
     "imports-loader": "^4.0.1",
-    "webpack": "^5.88.1",
+    "webpack": "^5.96.1",
     "webpack-cli": "^5.1.4"
   },
   "jest": {
