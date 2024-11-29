@@ -47,9 +47,41 @@ export default class UIControlsRenderer extends Renderer {
   updateBrushSelection(newTimeRange) {
     if (newTimeRange) {
       this.isManualBrushUpdate = false;
-      const maxX = newTimeRange[1] > this.x.domain()[1] ? this.x.domain()[1] : newTimeRange[1];
-      const minX = newTimeRange[0] < this.x.domain()[0] ? this.x.domain()[0] : newTimeRange[0];
-      this.selectedTimeRange = [minX, maxX];
+      const [newStart, newEnd] = newTimeRange;
+      const [domainStart, domainEnd] = this.x.domain();
+      const duration = newEnd - newStart;
+      let selectedMin = newStart;
+      let selectedMax = newEnd;
+      // Ensure selectedMin does not go before domainStart
+      const adjustSelectedMin = (calculatedMin) => {
+        if (calculatedMin < domainStart) {
+          return domainStart;
+        }
+        return calculatedMin;
+      };
+
+      // Check if newTimeRange exceeds the domain
+      if (newStart < domainStart || newEnd > domainEnd) {
+        selectedMax = domainEnd;
+
+        // Calculate selectedMin based on the duration
+        selectedMin = new Date(domainEnd.getTime() - duration);
+
+        // Ensure selectedMin does not go before domainStart
+        selectedMin = adjustSelectedMin(selectedMin);
+
+        if (selectedMin === domainStart) {
+          selectedMax = new Date(selectedMin.getTime() + duration);
+
+          // Ensure selectedMax does not exceed domainEnd
+          if (selectedMax > domainEnd) {
+            selectedMax = domainEnd;
+          }
+        }
+      }
+
+      this.selectedTimeRange = [selectedMin, selectedMax];
+
       // Set the flag before emitting an event
       this.preventEventLoop = true;
 
