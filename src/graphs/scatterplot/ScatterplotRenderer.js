@@ -226,18 +226,54 @@ class ScatterplotRenderer extends UIControlsRenderer {
     }
   }
 
-  setBaselineListener(baselineStartDateSelector, baselineEndDateSelector) {
-    this.baselineStartDateElement = document.querySelector(baselineStartDateSelector);
+  setBaselineListener(baselineStartDateSelector, baselineEndDateSelector, baselineErrorSelector, namespace) {
+    const lastIndex = this.data.length - 1;
+    this.baselineStartDateElement = d3.select(baselineStartDateSelector);
     if (this.baselineStartDateElement) {
-      this.baselineStartDateElement.addEventListener('change', (event) => {
-        this.baselineStartDate = new Date(event.target.value);
+      this.baselineStartDateElement.attr('min', new Date(this.data[0].deliveredDate).toISOString().split('T')[0]);
+      this.baselineStartDateElement.attr('max', new Date(this.data[lastIndex].deliveredDate).toISOString().split('T')[0]);
+      this.baselineStartDateElement.on(`change.${namespace}`, (event) => {
+        const selectedValue = d3.select(event.target).property('value');
+        this.baselineStartDate = new Date(selectedValue);
+
+        if (this.baselineEndDate && this.baselineStartDate > this.baselineEndDate) {
+          d3.select(baselineErrorSelector).style('display', 'block').text('Start date cannot be later than end date.');
+
+          // Reset the end date to the start date
+          this.baselineEndDateElement.property('value', selectedValue);
+          this.baselineEndDate = new Date(selectedValue);
+
+          // Hide the error message after 3 seconds
+          setTimeout(() => {
+            d3.select(baselineErrorSelector).style('display', 'none');
+          }, 3000);
+        }
+
         this.updateGraph(this.selectedTimeRange);
       });
     }
-    this.baselineEndDateElement = document.querySelector(baselineEndDateSelector);
+
+    this.baselineEndDateElement = d3.select(baselineEndDateSelector);
     if (this.baselineEndDateElement) {
-      this.baselineEndDateElement.addEventListener('change', (event) => {
-        this.baselineEndDate = new Date(event.target.value);
+      this.baselineEndDateElement.attr('min', new Date(this.data[0].deliveredDate).toISOString().split('T')[0]);
+      this.baselineEndDateElement.attr('max', new Date(this.data[lastIndex].deliveredDate).toISOString().split('T')[0]);
+      this.baselineEndDateElement.on(`change.${namespace}`, (event) => {
+        const selectedValue = d3.select(event.target).property('value');
+        this.baselineEndDate = new Date(selectedValue);
+
+        if (this.baselineStartDate && this.baselineStartDate > this.baselineEndDate) {
+          d3.select(baselineErrorSelector).style('display', 'block').text('End date cannot be earlier than start date.');
+
+          // Reset the start date to the end date
+          this.baselineStartDateElement.property('value', selectedValue);
+          this.baselineStartDate = new Date(selectedValue);
+
+          // Hide the error message after 3 seconds
+          setTimeout(() => {
+            d3.select(baselineErrorSelector).style('display', 'none');
+          }, 3000);
+        }
+
         this.updateGraph(this.selectedTimeRange);
       });
     }

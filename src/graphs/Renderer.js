@@ -28,6 +28,7 @@ export default class Renderer {
    * @returns {d3.Selection} The created SVG element.
    */
   createSvg(selector, height = this.height, width = this.width) {
+    this.graphElementSelector = selector;
     const htmlElement = document.querySelector(selector);
     if (htmlElement) {
       htmlElement.innerHTML = '';
