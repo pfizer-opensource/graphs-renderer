@@ -434,7 +434,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * @param {Object} observations - Observations data for the renderer.
    */
   setupObservationLogging(observations) {
-    if (observations.data.length > 0) {
+    if (observations?.data?.length > 0) {
       this.displayObservationMarkers(observations);
       this.enableMetrics();
     }
@@ -457,7 +457,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * @private
    */
   #removeObservationMarkers() {
-    this.chartArea.selectAll('.ring').remove();
+    this.chartArea?.selectAll('.ring')?.remove();
   }
 
   /**
@@ -510,7 +510,7 @@ class ScatterplotRenderer extends UIControlsRenderer {
    * @private
    */
   #createTooltip() {
-    this.tooltip = d3.select('body').append('div').attr('class', styles.tooltip).attr('id', 's-tooltip').style('opacity', 0);
+    this.tooltip = d3.select('body').append('div').attr('class', styles.chartTooltip).attr('id', 's-tooltip').style('opacity', 0);
   }
 
   /**

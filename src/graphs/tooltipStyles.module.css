@@ -1,4 +1,4 @@
-.tooltip {
+.chartTooltip {
   position: absolute;
   text-align: center;
   width: max-content;
@@ -11,7 +11,7 @@
   z-index: 1;
 }
 
-.tooltip p {
+.chartTooltip p {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

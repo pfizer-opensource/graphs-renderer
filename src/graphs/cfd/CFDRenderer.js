@@ -108,7 +108,7 @@ class CFDRenderer extends UIControlsRenderer {
         [this.width, this.focusHeight - this.margin.top + 1],
       ])
       .on('brush', ({ selection }) => {
-        this.selectedTimeRange = selection.map(this.x.invert, this.x);
+        this.selectedTimeRange = selection.map(this.x?.invert, this.x);
         this.updateGraph(this.selectedTimeRange);
         if (this.isManualBrushUpdate && this.eventBus) {
           this.eventBus?.emitEvents(`change-time-range-${this.chartName}`, this.selectedTimeRange);
@@ -160,7 +160,7 @@ class CFDRenderer extends UIControlsRenderer {
     this.drawYAxis(this.gy, this.currentYScale);
 
     this.chartArea
-      .selectAll('path')
+      ?.selectAll('path')
       .attr('class', (d) => 'area ' + d.key)
       .style('fill', (d) => this.#statesColors(d.key))
       .attr('d', this.#createAreaGenerator(this.currentXScale, this.currentYScale));
@@ -193,7 +193,7 @@ class CFDRenderer extends UIControlsRenderer {
   #drawArea() {
     this.chartArea = this.addClipPath(this.svg, `${this.chartName}-clip`);
     this.chartArea
-      .append('rect')
+      ?.append('rect')
       .attr('width', '100%')
       .attr('height', '100%')
       .attr('id', `${this.chartName}-area`)
@@ -412,7 +412,7 @@ class CFDRenderer extends UIControlsRenderer {
     const triangleBase = 11;
     const trianglePath = `M${-triangleBase / 2},0 L${triangleBase / 2},0 L0,-${triangleHeight} Z`;
     this.chartArea
-      .selectAll('observations')
+      ?.selectAll('observations')
       .data(observations?.data?.filter((d) => d.chart_type === this.chartType))
       .join('path')
       .attr('class', 'observation-marker')
@@ -436,12 +436,47 @@ class CFDRenderer extends UIControlsRenderer {
    */
   #showTooltipAndMovingLine(event) {
     !this.tooltip && this.#createTooltipAndMovingLine(event.lineX, event.lineY);
-    const tooltipWidth = this.tooltip.node().getBoundingClientRect().width;
-    const cfdGraphRect = d3.select(this.graphElementSelector).node().getBoundingClientRect();
-    const tooltipTop = window.scrollY + cfdGraphRect.top - 50;
+    let { tooltipWidth, tooltipTop } = this.computeTooltipWidthAndTop(event);
+
     this.#clearTooltipAndMovingLine(event.lineX, event.lineY);
     this.#positionTooltip(event.tooltipLeft, tooltipTop, tooltipWidth);
     this.#populateTooltip(event);
+  }
+
+  computeTooltipWidthAndTop(event) {
+    const tooltipRect = this.tooltip.node().getBoundingClientRect();
+    const tooltipWidth = tooltipRect.width;
+    const tooltipHeight = tooltipRect.height;
+    const graphRect = d3.select(this.graphElementSelector).node().getBoundingClientRect();
+    const padding = 10;
+    let tooltipLeft = event.tooltipLeft;
+    let tooltipTop = event.lineY - tooltipHeight - padding;
+
+    // Get viewport dimensions
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // Adjust tooltipLeft to prevent overflow on the right
+    if (tooltipLeft + tooltipWidth + padding > viewportWidth) {
+      tooltipLeft = viewportWidth - tooltipWidth - padding;
+    }
+
+    // Adjust tooltipLeft to prevent overflow on the left
+    if (tooltipLeft < padding) {
+      tooltipLeft = padding;
+    }
+
+    // Adjust tooltipTop to prevent overflow on the top
+    if (tooltipTop < graphRect.top) {
+      // Position the tooltip below the event point if there's not enough space above
+      tooltipTop = event.lineY + padding;
+
+      // Ensure the tooltip doesn't overflow the bottom of the viewport
+      if (tooltipTop + tooltipHeight + padding > viewportHeight) {
+        tooltipTop = viewportHeight - tooltipHeight - padding;
+      }
+    }
+    return { tooltipWidth, tooltipTop };
   }
 
   /**
@@ -460,9 +495,9 @@ class CFDRenderer extends UIControlsRenderer {
    * @private
    */
   #createTooltipAndMovingLine(x, y) {
-    this.tooltip = d3.select('body').append('div').attr('class', styles.tooltip).attr('id', 'c-tooltip').style('opacity', 0);
+    this.tooltip = d3.select('body').append('div').attr('class', styles.chartTooltip).attr('id', 'c-tooltip').style('opacity', 0);
     this.cfdLine = this.chartArea
-      .append('line')
+      ?.append('line')
       .attr('id', `${this.chartName}-line`)
       .attr('stroke', 'black')
       .attr('y1', 0)
@@ -481,7 +516,7 @@ class CFDRenderer extends UIControlsRenderer {
    */
   #positionTooltip(left, top, width) {
     this.tooltip?.transition().duration(100).style('opacity', 0.9).style('pointer-events', 'auto');
-    this.tooltip?.style('left', left - width + 'px').style('top', top + 30 + 'px');
+    this.tooltip?.style('left', left - width + 'px').style('top', top + 'px');
   }
 
   /**
@@ -492,7 +527,7 @@ class CFDRenderer extends UIControlsRenderer {
   #populateTooltip(event) {
     this.tooltip?.append('p').text(formatDateToLocalString(event.date)).attr('class', 'text-center');
     const gridContainer = this.tooltip?.append('div').attr('class', 'grid grid-cols-2');
-    if (event.metrics.averageCycleTime > 0) {
+    if (event.metrics?.averageCycleTime > 0) {
       gridContainer
         .append('span')
         .text('Cycle time:')
@@ -501,12 +536,12 @@ class CFDRenderer extends UIControlsRenderer {
         .style('color', this.#cycleTimeColor);
       gridContainer
         .append('span')
-        .text(`${event.metrics.averageCycleTime} days`)
+        .text(`${event.metrics?.averageCycleTime} days`)
         .attr('class', 'pl-1')
         .style('text-align', 'start')
         .style('color', this.#cycleTimeColor);
     }
-    if (event.metrics.averageLeadTime > 0) {
+    if (event.metrics?.averageLeadTime > 0) {
       gridContainer
         .append('span')
         .text('Lead time:')
@@ -566,8 +601,8 @@ class CFDRenderer extends UIControlsRenderer {
       return; // Exit the function if metrics are already enabled
     }
     this.#areMetricsEnabled = true;
-    this.chartArea.on('mousemove', (event) => this.#handleMouseEvent(event, `${this.chartName}-mousemove`));
-    this.chartArea.on('click', (event) => this.#handleMouseEvent(event, `${this.chartName}-click`));
+    this.chartArea?.on('mousemove', (event) => this.#handleMouseEvent(event, `${this.chartName}-mousemove`));
+    this.chartArea?.on('click', (event) => this.#handleMouseEvent(event, `${this.chartName}-click`));
     this.#setupMouseLeaveHandler();
   }
 
@@ -590,8 +625,8 @@ class CFDRenderer extends UIControlsRenderer {
         return;
       }
 
-      const date = this.currentXScale.invert(xPosition);
-      const cumulativeCountOfWorkItems = this.currentYScale.invert(yPosition);
+      const date = this.currentXScale?.invert(xPosition);
+      const cumulativeCountOfWorkItems = this.currentYScale?.invert(yPosition);
       const excludeCycleTime = eventName.includes('mousemove') && !eventName.includes(this.chartName);
 
       const metrics = this.computeMetrics(date, Math.floor(cumulativeCountOfWorkItems), excludeCycleTime);
@@ -619,7 +654,7 @@ class CFDRenderer extends UIControlsRenderer {
    * @private
    */
   #setupMouseLeaveHandler() {
-    this.chartArea.on('mouseleave', () => this.hideTooltipAndMovingLine());
+    this.chartArea?.on('mouseleave', () => this.hideTooltipAndMovingLine());
   }
 
   /**
@@ -729,8 +764,8 @@ class CFDRenderer extends UIControlsRenderer {
    * @private
    */
   #drawMetricLines({
-    averageCycleTime,
-    averageLeadTime,
+    averageCycleTime = '',
+    averageLeadTime = '',
     leadTimeDateBefore,
     cycleTimeDateBefore,
     currentDate,
@@ -769,12 +804,12 @@ class CFDRenderer extends UIControlsRenderer {
    * @private
    */
   #drawHorizontalMetricLine(dateBefore, dateAfter, noOfItems, cssClass, color, width) {
-    this.chartArea.selectAll(`.${cssClass}`).remove();
+    this.chartArea?.selectAll(`.${cssClass}`).remove();
     const x1 = this.currentXScale(dateBefore);
     const x2 = this.currentXScale(dateAfter);
     const y = this.currentYScale(noOfItems);
     this.chartArea
-      .append('line')
+      ?.append('line')
       .attr('x1', x1)
       .attr('y1', y)
       .attr('x2', x2)
@@ -795,12 +830,12 @@ class CFDRenderer extends UIControlsRenderer {
    * @private
    */
   #drawVerticalMetricLine(date, noOfItemsBefore, noOfItemsAfter, cssClass, color) {
-    this.chartArea.selectAll(`.${cssClass}`).remove();
+    this.chartArea?.selectAll(`.${cssClass}`).remove();
     const y1 = this.currentYScale(noOfItemsBefore);
     const y2 = this.currentYScale(noOfItemsAfter);
     const x = this.currentXScale(date);
     this.chartArea
-      .append('line')
+      ?.append('line')
       .attr('x1', x)
       .attr('y1', y1)
       .attr('x2', x)
@@ -815,9 +850,9 @@ class CFDRenderer extends UIControlsRenderer {
    * @private
    */
   #removeMetricsLines() {
-    this.chartArea.selectAll('.wip-line').remove();
-    this.chartArea.selectAll('.cycle-time-line').remove();
-    this.chartArea.selectAll('.lead-time-line').remove();
+    this.chartArea?.selectAll('.wip-line').remove();
+    this.chartArea?.selectAll('.cycle-time-line').remove();
+    this.chartArea?.selectAll('.lead-time-line').remove();
   }
 
   /**
