@@ -19,6 +19,11 @@ class WorkItemAgeRenderer extends Renderer {
     this.states = states.filter((d) => d !== 'delivered');
     this.data = this.groupData(filteredData);
     this.workTicketsURL = workTicketsURL;
+    this.chartType = 'WORK_ITEM_AGE';
+  }
+
+  setupEventBus(eventBus) {
+    this.eventBus = eventBus;
   }
 
   groupData(data) {
@@ -248,12 +253,22 @@ class WorkItemAgeRenderer extends Renderer {
   }
 
   handleMouseClickEvent(event, d) {
+    const observationsData = [];
+    d.items.forEach((item) => {
+      const obs = this.observations?.data?.find((o) => item.ticketId === o.work_item && o.chart_type === this.chartType);
+      if (obs) {
+        observationsData.push(obs);
+      }
+    });
+
     let data = {
       ...d,
       tooltipLeft: event.pageX,
       tooltipTop: event.pageY,
+      observations: observationsData,
     };
 
+    this.eventBus?.emitEvents(`work-item-age-click`, data);
     this.showTooltip(data);
   }
 
@@ -263,6 +278,45 @@ class WorkItemAgeRenderer extends Renderer {
         this.hideTooltip();
       }
     });
+  }
+
+  setupObservationLogging(observations) {
+    if (observations?.data?.length > 0) {
+      this.displayObservationMarkers(observations);
+    }
+  }
+
+  displayObservationMarkers(observations) {
+    if (observations?.data) {
+      this.observations = observations;
+      this.#removeObservationMarkers();
+      this.#createObservationMarkers();
+    }
+  }
+
+  #removeObservationMarkers() {
+    this.svg?.selectAll('.ring')?.remove();
+  }
+
+  #createObservationMarkers() {
+    this.svg
+      .selectAll('ring')
+      .data(
+        this.data.filter((d) =>
+          this.observations?.data?.some(
+            (o) => d.items.find((i) => i.ticketId === o.work_item.toString()) && o.chart_type === this.chartType
+          )
+        )
+      )
+      .enter()
+      .append('circle')
+      .attr('class', 'ring')
+      .attr('cx', (d) => d.xJitter)
+      .attr('cy', (d) => this.y(d.age))
+      .attr('r', 10)
+      .attr('fill', 'none')
+      .attr('stroke', 'black')
+      .attr('stroke-width', '2px');
   }
 }
 
