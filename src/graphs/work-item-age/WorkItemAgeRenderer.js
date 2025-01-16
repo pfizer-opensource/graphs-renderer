@@ -18,6 +18,7 @@ class WorkItemAgeRenderer extends Renderer {
     super(filteredData);
     this.states = states.filter((d) => d !== 'delivered');
     this.data = this.groupData(filteredData);
+    this.groupedData = this.groupData(filteredData);
     this.workTicketsURL = workTicketsURL;
     this.chartType = 'WORK_ITEM_AGE';
   }
@@ -44,6 +45,7 @@ class WorkItemAgeRenderer extends Renderer {
     this.drawSvg(graphElementSelector);
     this.drawAxes();
     this.drawArea();
+    this.drawPercentileLines(this.data, this.y);
   }
 
   drawSvg(graphElementSelector) {
@@ -70,7 +72,7 @@ class WorkItemAgeRenderer extends Renderer {
     // Draw dots
     this.svg
       .selectAll('.dot')
-      .data(this.data)
+      .data(this.groupedData)
       .enter()
       .append('circle')
       .attr('class', 'dot')
@@ -85,7 +87,7 @@ class WorkItemAgeRenderer extends Renderer {
     // Add numbers inside the dots
     this.svg
       .selectAll('.dot-label')
-      .data(this.data)
+      .data(this.groupedData)
       .enter()
       .append('text')
       .attr('class', 'dot-label')
@@ -101,7 +103,7 @@ class WorkItemAgeRenderer extends Renderer {
   }
 
   computeDotPositions() {
-    const groupedData = d3.group(this.data, (d) => d.currentState);
+    const groupedData = d3.group(this.groupedData, (d) => d.currentState);
 
     // Generate x positions for dots within each state
     const stateWidth = this.x.bandwidth();
@@ -139,7 +141,7 @@ class WorkItemAgeRenderer extends Renderer {
 
   updateChartArea() {
     this.drawYAxis(this.gy, this.y);
-    this.computeDotPositions();
+    // this.computeDotPositions();
     this.svg
       .selectAll(`.dot`)
       .attr('cx', (d) => d.xJitter)
@@ -148,6 +150,8 @@ class WorkItemAgeRenderer extends Renderer {
       .selectAll(`.dot-label`)
       .attr('x', (d) => d.xJitter)
       .attr('y', (d) => this.y(d.age));
+    this.displayObservationMarkers(this.observations);
+    this.drawPercentileLines(this.data, this.y);
   }
 
   drawAxes() {
@@ -164,12 +168,12 @@ class WorkItemAgeRenderer extends Renderer {
     if (this.timeScale === 'logarithmic') {
       this.y = d3
         .scaleLog()
-        .domain([1, d3.max(this.data, (d) => d.age)])
+        .domain([1, d3.max(this.groupedData, (d) => d.age)])
         .range([this.height, 0]);
     } else if (this.timeScale === 'linear') {
       this.y = d3
         .scaleLinear()
-        .domain([0, d3.max(this.data, (d) => d.age)])
+        .domain([0, d3.max(this.groupedData, (d) => d.age)])
         .range([this.height, 0]);
     }
   }
@@ -282,6 +286,7 @@ class WorkItemAgeRenderer extends Renderer {
 
   setupObservationLogging(observations) {
     if (observations?.data?.length > 0) {
+      this.observations = observations;
       this.displayObservationMarkers(observations);
     }
   }
@@ -302,7 +307,7 @@ class WorkItemAgeRenderer extends Renderer {
     this.svg
       .selectAll('ring')
       .data(
-        this.data.filter((d) =>
+        this.groupedData.filter((d) =>
           this.observations?.data?.some(
             (o) => d.items.find((i) => i.ticketId === o.work_item.toString()) && o.chart_type === this.chartType
           )
@@ -318,6 +323,69 @@ class WorkItemAgeRenderer extends Renderer {
       .attr('stroke', 'black')
       .attr('stroke-width', '2px');
   }
+
+  //region Percentile lines rendering
+
+  computePercentileLine(data, percent) {
+    const percentileIndex = Math.floor(data.length * percent);
+    return data[percentileIndex]?.age;
+  }
+
+  drawPercentileLines(data, y) {
+    console.log('drawPercentileLines');
+    const dataSortedByAge = [...data].sort((a, b) => a.age - b.age);
+    console.log('dataSortedByAge');
+    console.table(dataSortedByAge);
+    const percentile1 = this.computePercentileLine(dataSortedByAge, 0.5);
+    const percentile2 = this.computePercentileLine(dataSortedByAge, 0.75);
+    const percentile3 = this.computePercentileLine(dataSortedByAge, 0.85);
+
+    percentile1 && this.drawHorizontalLine(y, percentile1, 'green', 'p1', '50%');
+    percentile1 && this.drawHorizontalLine(y, percentile2, 'orange', 'p2', '75%');
+    percentile1 && this.drawHorizontalLine(y, percentile3, 'red', 'p3', '85%');
+  }
+
+  drawHorizontalLine(yScale, yValue, color, id, text = '') {
+    let lineEl = this.svg.select('#line-' + id);
+    let textEl = this.svg.select('#text-' + id);
+
+    if (lineEl.empty()) {
+      lineEl = this.svg
+        .append('line')
+        .attr('x1', 0)
+        .attr('x2', this.width)
+        .attr('id', 'line-' + id)
+        .attr('class', 'average-line')
+        .attr('stroke-width', 3)
+        .attr('stroke-dasharray', '7');
+      textEl = this.svg
+        .append('text')
+        .attr('text-anchor', 'start')
+        .attr('id', 'text-' + id)
+        .style('font-size', '12px');
+    }
+    lineEl.attr('y1', yScale(yValue)).attr('y2', yScale(yValue)).attr('stroke', color);
+    if (text) {
+      textEl
+        .text(text)
+        .attr('fill', color)
+        .attr('y', yScale(yValue) - 4);
+      // Measure text width
+      const textWidth = this.#getTextWidth(text, '12px');
+      const adjustedX = this.width - textWidth;
+      textEl.attr('x', adjustedX);
+    }
+  }
+
+  #getTextWidth(text, fontSize = '12px', fontFamily = 'Arial') {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    context.font = `${fontSize} ${fontFamily}`;
+    const width = context.measureText(text).width;
+    return width;
+  }
+
+  //endregion
 }
 
 export default WorkItemAgeRenderer;
