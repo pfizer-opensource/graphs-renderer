@@ -1,11 +1,11 @@
 import { addDaysToDate, calculateDaysBetweenDates, readJsonFile } from '../utils/utils.js';
-import Renderer from './Renderer.js';
+import { Renderer } from './Renderer.js';
 import * as d3 from 'd3';
 
 /**
  * Extends Renderer to manage UI controls the graphs
  */
-export default class UIControlsRenderer extends Renderer {
+export class UIControlsRenderer extends Renderer {
   selectedTimeRange;
   preventEventLoop;
   chartName;

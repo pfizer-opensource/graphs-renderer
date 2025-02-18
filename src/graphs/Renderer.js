@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 /**
  * Represents a generic graphs renderer
  */
-export default class Renderer {
+export class Renderer {
   margin = { top: 30, right: 40, bottom: 70, left: 40 };
   width = 1040 - this.margin.left - this.margin.right;
   height = 460 - this.margin.top - this.margin.bottom;

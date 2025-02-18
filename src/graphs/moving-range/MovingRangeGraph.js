@@ -1,4 +1,4 @@
-class MovingRangeGraph {
+export class MovingRangeGraph {
   dataSet = [];
 
   constructor(data) {
@@ -30,5 +30,3 @@ class MovingRangeGraph {
     return Math.ceil(filteredData.reduce((acc, curr) => acc + curr.leadTime, 0) / filteredData.length);
   }
 }
-
-export default MovingRangeGraph;

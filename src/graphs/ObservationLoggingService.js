@@ -1,4 +1,4 @@
-class ObservationLoggingService {
+export class ObservationLoggingService {
   observationsByService = { data: { rows: [] } };
   btoaToken = '';
   serviceId = '';
@@ -68,5 +68,3 @@ class ObservationLoggingService {
     return observation;
   }
 }
-
-export default ObservationLoggingService;

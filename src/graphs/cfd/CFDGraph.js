@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 /**
  * Class representing a Cumulative Flow Diagram (CFD) Graph Data
  */
-class CFDGraph {
+export class CFDGraph {
   /**
    * Creates a new CFDGraph instance.
    * @constructor
@@ -83,7 +83,7 @@ class CFDGraph {
         date: currentDate,
       };
       this.states.forEach((state, index) => {
-        dataEntry[state] = this.#getNoOfTicketsInState(this.states[index], currentTimestamp);
+        dataEntry[state] = this.getNoOfTicketsInState(this.states[index], currentTimestamp);
       });
       dataSet.push(dataEntry);
     }
@@ -100,14 +100,14 @@ class CFDGraph {
    * @param {number} timestamp - The timestamp at which to check the ticket state.
    * @returns {number} noOfTickets - The count of tickets in the specified state for the given timestamp.
    */
-  #getNoOfTicketsInState(state, timestamp) {
+  getNoOfTicketsInState(state, timestamp) {
     return this.data.filter((d) => {
       if (!d[state]) {
         return false;
       }
-      let nextState = this.#getNextState(state);
+      let nextState = this.getNextState(state);
       while (nextState !== null && !d[nextState]) {
-        nextState = this.#getNextState(nextState);
+        nextState = this.getNextState(nextState);
       }
       if (!d[nextState]) {
         return d[state] <= timestamp;
@@ -123,10 +123,8 @@ class CFDGraph {
    * @param {string} state - The current state of the ticket.
    * @returns {string|null} nextState - The next state in the ticket lifecycle, or null if there is no next state.
    */
-  #getNextState(state) {
+  getNextState(state) {
     const index = this.states.indexOf(state);
     return index >= 0 && index < this.states.length - 1 ? this.states[index + 1] : null;
   }
 }
-
-export default CFDGraph;
