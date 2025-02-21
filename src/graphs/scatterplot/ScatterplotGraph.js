@@ -3,7 +3,7 @@ import { calculateDaysBetweenDates } from '../../utils/utils.js';
 /**
  * Class representing a Scatterplot Graph Data
  */
-class ScatterplotGraph {
+export class ScatterplotGraph {
   /**
    * Creates a new ScatterplotGraph instance.
    * @constructor
@@ -91,5 +91,3 @@ class ScatterplotGraph {
     return dataSet;
   }
 }
-
-export default ScatterplotGraph;

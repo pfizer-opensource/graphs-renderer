@@ -1,4 +1,4 @@
-import CFDRenderer from '../../../src/graphs/cfd/CFDRenderer.js';
+import {CFDRenderer} from '../../../src/graphs/cfd/CFDRenderer.js';
 import cfdGraphOutput from '../../testData/CFDGraphExpectedOutput.js';
 import metricsOutput from '../../testData/CFDRendererExpectedOutput.js';
 

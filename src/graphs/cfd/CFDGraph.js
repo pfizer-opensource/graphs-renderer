@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 /**
  * Class representing a Cumulative Flow Diagram (CFD) Graph Data
  */
-class CFDGraph {
+export class CFDGraph {
   /**
    * Creates a new CFDGraph instance.
    * @constructor
@@ -128,5 +128,3 @@ class CFDGraph {
     return index >= 0 && index < this.states.length - 1 ? this.states[index + 1] : null;
   }
 }
-
-export default CFDGraph;

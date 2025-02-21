@@ -3,7 +3,7 @@ import { calculateDaysBetweenDates } from '../../utils/utils.js';
 /**
  * Class representing a Work Item Graph Data
  */
-class WorkItemAgeGraph {
+export class WorkItemAgeGraph {
   constructor(data, states = ['analysis_active', 'analysis_done', 'in_progress', 'dev_complete', 'verification_start', 'delivered']) {
     this.data = data;
     this.states = states;
@@ -46,5 +46,3 @@ class WorkItemAgeGraph {
     return ticketStates;
   }
 }
-
-export default WorkItemAgeGraph;

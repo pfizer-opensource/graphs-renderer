@@ -1,8 +1,8 @@
 import * as d3 from 'd3';
 import styles from '../tooltipStyles.module.css';
-import Renderer from '../Renderer.js';
+import { Renderer } from '../Renderer.js';
 
-class WorkItemAgeRenderer extends Renderer {
+export class WorkItemAgeRenderer extends Renderer {
   color = '#0ea5e9';
   xAxisLabel = 'Work item states';
   yAxisLabel = 'Age(days)';
@@ -319,5 +319,3 @@ class WorkItemAgeRenderer extends Renderer {
       .attr('stroke-width', '2px');
   }
 }
-
-export default WorkItemAgeRenderer;

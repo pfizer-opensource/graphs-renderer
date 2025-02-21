@@ -1,9 +1,9 @@
-import ScatterplotRenderer from './ScatterplotRenderer.js';
+import { ScatterplotRenderer } from './ScatterplotRenderer.js';
 
 /**
  * Class representing a Scatterplot graph renderer
  */
-class SimpleScatterplotRenderer extends ScatterplotRenderer {
+export class SimpleScatterplotRenderer extends ScatterplotRenderer {
   currentXScale;
   currentYScale;
   timeScale = 'logarithmic';
@@ -84,5 +84,3 @@ class SimpleScatterplotRenderer extends ScatterplotRenderer {
     percentile1 && this.drawHorizontalLine(y, percentile4, 'red', 'p4', '95%');
   }
 }
-
-export default SimpleScatterplotRenderer;

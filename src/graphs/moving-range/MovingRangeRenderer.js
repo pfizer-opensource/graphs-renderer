@@ -1,7 +1,7 @@
-import ScatterplotRenderer from '../scatterplot/ScatterplotRenderer.js';
+import { ScatterplotRenderer } from '../scatterplot/ScatterplotRenderer.js';
 import * as d3 from 'd3';
 
-class MovingRangeRenderer extends ScatterplotRenderer {
+export class MovingRangeRenderer extends ScatterplotRenderer {
   color = '#0ea5e9';
   timeScale = 'linear';
 
@@ -98,4 +98,3 @@ class MovingRangeRenderer extends ScatterplotRenderer {
     this.drawGraphLimits(this.currentYScale);
   }
 }
-export default MovingRangeRenderer;

@@ -15,6 +15,7 @@ module.exports = (env, argv) => {
                             // This ensures class names are preserved.
                             keep_classnames: true,
                         },
+                        keep_fnames: true,
                     },
                 }),
             ],
@@ -36,6 +37,7 @@ module.exports = (env, argv) => {
         },
         output: {
             filename: 'graphs-renderer.js',
+            // eslint-disable-next-line no-undef
             path: path.resolve(__dirname, 'dist'),
             // library: 'graphs-renderer',
             libraryTarget: 'module',
