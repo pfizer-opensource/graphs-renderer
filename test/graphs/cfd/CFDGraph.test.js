@@ -1,4 +1,4 @@
-import CFDGraph from '../../../src/graphs/cfd/CFDGraph.js';
+import {CFDGraph} from '../../../src/graphs/cfd/CFDGraph.js';
 import graphsTestData from '../../testData/GraphTestData.js';
 import cfdGraphOutput from '../../testData/CFDGraphExpectedOutput.js';
 

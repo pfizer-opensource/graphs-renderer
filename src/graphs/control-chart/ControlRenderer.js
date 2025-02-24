@@ -1,7 +1,7 @@
-import ScatterplotRenderer from '../scatterplot/ScatterplotRenderer.js';
+import { ScatterplotRenderer } from '../scatterplot/ScatterplotRenderer.js';
 import * as d3 from 'd3';
 
-class ControlRenderer extends ScatterplotRenderer {
+export class ControlRenderer extends ScatterplotRenderer {
   color = '#0ea5e9';
   timeScale = 'linear';
   connectDots = false;
@@ -114,5 +114,3 @@ class ControlRenderer extends ScatterplotRenderer {
     this.displayObservationMarkers(this.observations);
   }
 }
-
-export default ControlRenderer;

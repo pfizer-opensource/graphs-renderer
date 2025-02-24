@@ -1,5 +1,5 @@
 import { calculateDaysBetweenDates } from '../../utils/utils.js';
-import UIControlsRenderer from '../UIControlsRenderer.js';
+import { UIControlsRenderer } from '../UIControlsRenderer.js';
 import styles from '../tooltipStyles.module.css';
 
 import * as d3 from 'd3';
@@ -7,7 +7,7 @@ import * as d3 from 'd3';
 /**
  * Class representing a Scatterplot graph renderer
  */
-class ScatterplotRenderer extends UIControlsRenderer {
+export class ScatterplotRenderer extends UIControlsRenderer {
   color = '#0ea5e9';
   currentXScale;
   currentYScale;
@@ -654,5 +654,3 @@ class ScatterplotRenderer extends UIControlsRenderer {
 
   //endregion
 }
-
-export default ScatterplotRenderer;

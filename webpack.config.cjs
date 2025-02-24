@@ -1,10 +1,25 @@
 const path = require('path');
 const { version } = require('./package.json');
 const webpack = require('webpack');
+const TerserPlugin = require('terser-webpack-plugin');
 
 module.exports = (env, argv) => {
     const isDevelopment = argv.mode === 'development';
     return {
+        optimization: {
+            minimize: true,
+            minimizer: [
+                new TerserPlugin({
+                    terserOptions: {
+                        mangle: {
+                            // This ensures class names are preserved.
+                            keep_classnames: true,
+                        },
+                        keep_fnames: true,
+                    },
+                }),
+            ],
+        },
         entry: './src/index.js',
         devtool: isDevelopment ? 'source-map' : false,
         experiments: {
@@ -22,6 +37,7 @@ module.exports = (env, argv) => {
         },
         output: {
             filename: 'graphs-renderer.js',
+            // eslint-disable-next-line no-undef
             path: path.resolve(__dirname, 'dist'),
             // library: 'graphs-renderer',
             libraryTarget: 'module',

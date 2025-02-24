@@ -1,10 +1,10 @@
-import Renderer from '../Renderer.js';
+import { Renderer } from '../Renderer.js';
 import * as d3 from 'd3';
 
 /**
  * Class representing a Histogram graph renderer
  */
-class HistogramRenderer extends Renderer {
+export class HistogramRenderer extends Renderer {
   #color = '#0ea5e9';
   #padding = 3;
   #binnedData;
@@ -295,5 +295,3 @@ class HistogramRenderer extends Renderer {
 
   //endregion
 }
-
-export default HistogramRenderer;

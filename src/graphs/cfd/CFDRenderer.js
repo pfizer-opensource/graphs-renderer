@@ -1,12 +1,12 @@
 import { calculateDaysBetweenDates, areDatesEqual, formatDateToLocalString } from '../../utils/utils.js';
-import UIControlsRenderer from '../UIControlsRenderer.js';
+import { UIControlsRenderer } from '../UIControlsRenderer.js';
 import styles from '../tooltipStyles.module.css';
 import * as d3 from 'd3';
 
 /**
  * Class representing a Cumulative Flow Diagram (CFD) graph renderer
  */
-class CFDRenderer extends UIControlsRenderer {
+export class CFDRenderer extends UIControlsRenderer {
   #colorPalette = ['#22c55e', '#bbf7d0', '#8b5cf6', '#ddd6fe', '#0ea5e9', '#bae6fd'];
   #statesColors;
   #leadTimeColor = 'yellow';
@@ -893,5 +893,3 @@ class CFDRenderer extends UIControlsRenderer {
 
   //endregion
 }
-
-export default CFDRenderer;
