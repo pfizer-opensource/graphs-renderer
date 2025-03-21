@@ -600,8 +600,17 @@ export class ScatterplotRenderer extends UIControlsRenderer {
    * Internal method to set up a handler for mouse leave events on the chart area.
    * @private
    */
-  setupMouseLeaveHandler() {
-    d3.select(this.svg.node().parentNode).on('mouseleave', (event) => {
+  setupMouseLeaveHandler(retries = 10) {
+    const svgNode = this.svg?.node();
+    if (!svgNode || !svgNode.parentNode) {
+      if (retries > 0) {
+        setTimeout(() => this.setupMouseLeaveHandler(retries - 1), 100);
+      } else {
+        console.error('SVG parentNode is not available after retries.');
+      }
+      return;
+    }
+    d3.select(svgNode.parentNode).on('mouseleave', (event) => {
       if (event.relatedTarget !== this.tooltip?.node()) {
         this.hideTooltip();
       }
