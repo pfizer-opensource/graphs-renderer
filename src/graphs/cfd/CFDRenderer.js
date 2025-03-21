@@ -525,56 +525,44 @@ export class CFDRenderer extends UIControlsRenderer {
    * @param {Object} event - The event data for the tooltip.
    */
   #populateTooltip(event) {
-    this.tooltip?.append('p').text(formatDateToLocalString(event.date)).attr('class', 'text-center');
-    const gridContainer = this.tooltip?.append('div').attr('class', 'grid grid-cols-2');
+    this.tooltip?.append('p').text(formatDateToLocalString(event.date)).attr('class', styles.tooltipDate);
+
+    const gridContainer = this.tooltip?.append('div').attr('class', styles.tooltipGrid);
+
     if (event.metrics?.averageCycleTime > 0) {
+      gridContainer.append('span').text('Cycle time:').attr('class', styles.tooltipLabel).attr('class', styles.cycleTime);
       gridContainer
         .append('span')
-        .text('Cycle time:')
-        .attr('class', 'pr-1')
-        .style('text-align', 'start')
-        .style('color', this.#cycleTimeColor);
-      gridContainer
-        .append('span')
-        .text(`${event.metrics?.averageCycleTime} days`)
-        .attr('class', 'pl-1')
-        .style('text-align', 'start')
-        .style('color', this.#cycleTimeColor);
+        .text(`${event.metrics.averageCycleTime} days`)
+        .attr('class', styles.tooltipValue)
+        .attr('class', styles.cycleTime);
     }
+
     if (event.metrics?.averageLeadTime > 0) {
-      gridContainer
-        .append('span')
-        .text('Lead time:')
-        .attr('class', 'pr-1')
-        .style('text-align', 'start')
-        .style('color', this.#leadTimeColor);
+      gridContainer.append('span').text('Lead time:').attr('class', styles.tooltipLabel).attr('class', styles.leadTime);
       gridContainer
         .append('span')
         .text(`${event.metrics.averageLeadTime} days`)
-        .attr('class', 'pl-1')
-        .style('text-align', 'start')
-        .style('color', this.#leadTimeColor);
+        .attr('class', styles.tooltipValue)
+        .attr('class', styles.leadTime);
     }
-    if (event.metrics.wip > 0) {
-      gridContainer.append('span').text('WIP:').attr('class', 'pr-1').style('text-align', 'start').style('color', this.#wipColor);
-      gridContainer
-        .append('span')
-        .text(`${event.metrics.wip} items`)
-        .attr('class', 'pl-1')
-        .style('text-align', 'start')
-        .style('color', this.#wipColor);
+
+    if (event.metrics?.wip > 0) {
+      gridContainer.append('span').text('WIP:').attr('class', styles.tooltipLabel).attr('class', styles.wip);
+      gridContainer.append('span').text(`${event.metrics.wip} items`).attr('class', styles.tooltipValue).attr('class', styles.wip);
     }
-    if (event.metrics.throughput > 0) {
-      gridContainer.append('span').text('Throughput:').attr('class', 'pr-1').style('text-align', 'start');
-      gridContainer.append('span').text(`${event.metrics.throughput} items`).attr('class', 'pl-1').style('text-align', 'start');
+
+    if (event.metrics?.throughput > 0) {
+      gridContainer.append('span').text('Throughput:').attr('class', styles.tooltipLabel);
+      gridContainer.append('span').text(`${event.metrics.throughput} items`).attr('class', styles.tooltipValue);
     }
+
     if (event.observationBody) {
-      gridContainer.append('span').text('Observation:').attr('class', 'pr-1').style('text-align', 'start');
+      gridContainer.append('span').text('Observation:').attr('class', styles.tooltipLabel);
       gridContainer
         .append('span')
         .text(`${event.observationBody.substring(0, 15)}...`)
-        .attr('class', 'pl-1')
-        .style('text-align', 'start');
+        .attr('class', styles.tooltipValue);
     }
   }
 
@@ -764,14 +752,14 @@ export class CFDRenderer extends UIControlsRenderer {
    * @private
    */
   #drawMetricLines({
-    averageCycleTime = '',
-    averageLeadTime = '',
+    averageCycleTime = 0,
+    averageLeadTime = 0,
     leadTimeDateBefore,
     cycleTimeDateBefore,
     currentDate,
     currentStateCumulativeCount,
     currentDataEntry,
-  }) {
+  } = {}) {
     if (averageLeadTime) {
       this.#drawHorizontalMetricLine(leadTimeDateBefore, currentDate, currentDataEntry.delivered, 'lead-time-line', this.#leadTimeColor, 3);
     }
@@ -863,11 +851,19 @@ export class CFDRenderer extends UIControlsRenderer {
    * @returns {number} The count of items in the specified state.
    */
   #getNoOfItems(currentData, state) {
+    if (!currentData || typeof currentData !== 'object') return 0;
+    if (!this.states || !Array.isArray(this.states)) return 0;
+
     let cumulativeCount = 0;
     const lastIndex = this.states.indexOf(state);
+    if (lastIndex === -1) return 0;
+
     for (let stateIndex = 0; stateIndex <= lastIndex; stateIndex++) {
-      cumulativeCount += currentData[this.states[stateIndex]];
+      const key = this.states[stateIndex];
+      const value = currentData[key];
+      cumulativeCount += typeof value === 'number' ? value : 0; // skip undefined/null
     }
+
     return cumulativeCount;
   }
 

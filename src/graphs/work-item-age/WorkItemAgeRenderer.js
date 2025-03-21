@@ -195,7 +195,6 @@ export class WorkItemAgeRenderer extends Renderer {
   }
 
   showTooltip(event) {
-    console.log(event);
     !this.tooltip && this.#createTooltip();
     this.#clearTooltipContent();
     this.#positionTooltip(event.tooltipLeft, event.tooltipTop);
@@ -276,8 +275,17 @@ export class WorkItemAgeRenderer extends Renderer {
     this.showTooltip(data);
   }
 
-  setupMouseLeaveHandler() {
-    d3.select(this.svg.node().parentNode).on('mouseleave', (event) => {
+  setupMouseLeaveHandler(retries = 10) {
+    const svgNode = this.svg?.node();
+    if (!svgNode || !svgNode.parentNode) {
+      if (retries > 0) {
+        setTimeout(() => this.setupMouseLeaveHandler(retries - 1), 100);
+      } else {
+        console.error('SVG parentNode is not available after retries.');
+      }
+      return;
+    }
+    d3.select(svgNode.parentNode).on('mouseleave', (event) => {
       if (event.relatedTarget !== this.tooltip?.node()) {
         this.hideTooltip();
       }
