@@ -526,7 +526,10 @@ export class ScatterplotRenderer extends UIControlsRenderer {
       .style('text-decoration', 'underline')
       .attr('href', `${this.workTicketsURL}/${event.ticketId}`)
       .text(event.ticketId)
-      .attr('target', '_blank');
+      .attr('target', '_blank')
+      .on('click', () => {
+        this.hideTooltip();
+      });
     event.observationBody && this.tooltip.append('p').text('Observation: ' + event.observationBody);
   }
 
@@ -612,6 +615,7 @@ export class ScatterplotRenderer extends UIControlsRenderer {
     }
     d3.select(svgNode.parentNode).on('mouseleave', (event) => {
       if (event.relatedTarget !== this.tooltip?.node()) {
+        console.log('setup mouse leave to hide tooltip');
         this.hideTooltip();
       }
     });

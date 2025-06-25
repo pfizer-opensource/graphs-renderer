@@ -206,6 +206,7 @@ export class WorkItemAgeRenderer extends Renderer {
    * Hides the tooltip.
    */
   hideTooltip() {
+    console.log('hide tooltip');
     this.tooltip?.transition().duration(100).style('opacity', 0).style('pointer-events', 'none');
   }
 
@@ -232,7 +233,10 @@ export class WorkItemAgeRenderer extends Renderer {
         .style('text-decoration', 'underline')
         .attr('href', `${this.workTicketsURL}/${item.ticketId}`)
         .text(item.ticketId)
-        .attr('target', '_blank');
+        .attr('target', '_blank')
+        .on('click', () => {
+          this.hideTooltip();
+        });
     });
   }
 
