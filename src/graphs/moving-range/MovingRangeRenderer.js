@@ -45,14 +45,20 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
       .style('text-decoration', 'underline')
       .attr('href', `${this.workTicketsURL}/${event.workItem1}`)
       .text(event.workItem1)
-      .attr('target', '_blank');
+      .attr('target', '_blank')
+      .on('click', () => {
+        this.hideTooltip();
+      });
     this.tooltip
       .append('div')
       .append('a')
       .style('text-decoration', 'underline')
       .attr('href', `${this.workTicketsURL}/${event.workItem2}`)
-      .text(event.workItem1)
-      .attr('target', '_blank');
+      .text(event.workItem2)
+      .attr('target', '_blank')
+      .on('click', () => {
+        this.hideTooltip();
+      });
   }
 
   drawScatterplot(chartArea, data, x, y) {

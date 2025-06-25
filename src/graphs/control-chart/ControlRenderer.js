@@ -6,10 +6,11 @@ export class ControlRenderer extends ScatterplotRenderer {
   timeScale = 'linear';
   connectDots = false;
 
-  constructor(data, avgMovingRangeFunc, chartName) {
+  constructor(data, avgMovingRangeFunc, chartName, workTicketsURL) {
     super(data);
     this.chartName = chartName;
     this.chartType = 'CONTROL';
+    this.workTicketsURL = workTicketsURL;
     this.avgMovingRangeFunc = avgMovingRangeFunc;
     this.dotClass = 'control-dot';
     this.yAxisLabel = 'Days';
@@ -50,12 +51,19 @@ export class ControlRenderer extends ScatterplotRenderer {
   }
 
   populateTooltip(event) {
+    console.log('populateTooltip', event);
     this.tooltip
       .style('pointer-events', 'auto')
       .style('opacity', 0.9)
-      .append('p')
+      .append('div')
+      .append('a')
       .style('text-decoration', 'underline')
-      .text(`${event.deliveredDate}`);
+      .attr('href', `${this.workTicketsURL}/${event.ticketId}`)
+      .text(event.ticketId)
+      .attr('target', '_blank')
+      .on('click', () => {
+        this.hideTooltip();
+      });
   }
 
   drawScatterplot(chartArea, data, x, y) {
