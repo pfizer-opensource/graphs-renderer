@@ -26,6 +26,7 @@ if (!data || data.length === 0) {
     renderGraphs(data, serviceId);
 }
 
+// eslint-disable-next-line no-unused-vars
 function renderCfdGraph(data, controlsElementSelector, loadConfigInputSelector, resetConfigInputSelector) {
     //The cfd area chart and brush window elements css selectors
     const cfdGraphElementSelector = "#cfd-area-div";

@@ -1,6 +1,5 @@
 import { calculateDaysBetweenDates } from '../../utils/utils.js';
 import { UIControlsRenderer } from '../UIControlsRenderer.js';
-import styles from '../tooltipStyles.module.css';
 
 import * as d3 from 'd3';
 
@@ -488,32 +487,6 @@ export class ScatterplotRenderer extends UIControlsRenderer {
   //region Tooltip
 
   /**
-   * Shows the tooltip with provided event data.
-   * @param {Object} event - The event data for the tooltip.
-   */
-  showTooltip(event) {
-    !this.tooltip && this.#createTooltip();
-    this.#clearTooltipContent();
-    this.#positionTooltip(event.tooltipLeft, event.tooltipTop);
-    this.populateTooltip(event);
-  }
-
-  /**
-   * Hides the tooltip.
-   */
-  hideTooltip() {
-    this.tooltip?.transition().duration(100).style('opacity', 0).style('pointer-events', 'none');
-  }
-
-  /**
-   * Creates a tooltip for the chart used for the observation logging.
-   * @private
-   */
-  #createTooltip() {
-    this.tooltip = d3.select('body').append('div').attr('class', styles.chartTooltip).attr('id', 's-tooltip').style('opacity', 0);
-  }
-
-  /**
    * Populates the tooltip's content with event data: ticket id and observation body
    * @private
    * @param {Object} event - The event data for the tooltip.
@@ -532,26 +505,6 @@ export class ScatterplotRenderer extends UIControlsRenderer {
       });
     event.observationBody && this.tooltip.append('p').text('Observation: ' + event.observationBody);
   }
-
-  /**
-   * Positions the tooltip on the page.
-   * @private
-   * @param {number} left - The left position for the tooltip.
-   * @param {number} top - The top position for the tooltip.
-   */
-  #positionTooltip(left, top) {
-    this.tooltip.transition().duration(100).style('opacity', 0.9).style('pointer-events', 'auto');
-    this.tooltip.style('left', left + 'px').style('top', top + 'px');
-  }
-
-  /**
-   * Clears the content of the tooltip.
-   * @private
-   */
-  #clearTooltipContent() {
-    this.tooltip.selectAll('*').remove();
-  }
-
   //endregion
 
   //region Metrics
@@ -615,7 +568,6 @@ export class ScatterplotRenderer extends UIControlsRenderer {
     }
     d3.select(svgNode.parentNode).on('mouseleave', (event) => {
       if (event.relatedTarget !== this.tooltip?.node()) {
-        console.log('setup mouse leave to hide tooltip');
         this.hideTooltip();
       }
     });
