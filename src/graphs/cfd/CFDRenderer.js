@@ -75,7 +75,7 @@ export class CFDRenderer extends UIControlsRenderer {
     if (this.eventBus && Array.isArray(mouseChartsEvents)) {
       mouseChartsEvents.forEach((chart) => {
         this.eventBus?.addEventListener(`${chart}-mousemove`, (event) => this.#handleMouseEvent(event, `${chart}-mousemove`));
-        this.eventBus?.addEventListener(`${chart}-mouseleave`, () => this.hideTooltipAndMovingLine());
+        this.eventBus?.addEventListener(`${chart}-mouseleave`, () => this.hideTooltip());
       });
     }
   }
@@ -432,15 +432,14 @@ export class CFDRenderer extends UIControlsRenderer {
   /**
    * Shows the tooltip and the moving line at a specific position
    * @param {Object} event - The event object containing details: coordinates for the tooltip and line.
-   * @private
    */
-  #showTooltipAndMovingLine(event) {
-    !this.tooltip && this.#createTooltipAndMovingLine(event.lineX, event.lineY);
+  showTooltip(event) {
+    !this.tooltip && this.createTooltip(event.lineX, event.lineY);
     let { tooltipWidth, tooltipTop } = this.computeTooltipWidthAndTop(event);
 
-    this.#clearTooltipAndMovingLine(event.lineX, event.lineY);
-    this.#positionTooltip(event.tooltipLeft, tooltipTop, tooltipWidth);
-    this.#populateTooltip(event);
+    this.clearTooltipContent(event.lineX, event.lineY);
+    this.positionTooltip(event.tooltipLeft, tooltipTop, tooltipWidth);
+    this.populateTooltip(event);
   }
 
   computeTooltipWidthAndTop(event) {
@@ -482,7 +481,7 @@ export class CFDRenderer extends UIControlsRenderer {
   /**
    * Hides the tooltip and the moving line on the chart.
    */
-  hideTooltipAndMovingLine() {
+  hideTooltip() {
     if (this.tooltip) {
       this.tooltip.transition().duration(100).style('opacity', 0).style('pointer-events', 'none');
       this.cfdLine.transition().duration(100).style('display', 'none');
@@ -490,11 +489,22 @@ export class CFDRenderer extends UIControlsRenderer {
     }
   }
 
+  cleanupTooltip() {
+    this.hideTooltip();
+    if (this.tooltip) {
+      this.tooltip.remove();
+      this.tooltip = null;
+    }
+    if (this.cfdLine) {
+      this.cfdLine.remove();
+      this.cfdLine = null;
+    }
+  }
+
   /**
    * Creates a tooltip and a moving line for the chart used for the metrics and observation logging.
-   * @private
    */
-  #createTooltipAndMovingLine(x, y) {
+  createTooltip(x, y) {
     this.tooltip = d3.select('body').append('div').attr('class', styles.chartTooltip).attr('id', 'c-tooltip').style('opacity', 0);
     this.cfdLine = this.chartArea
       ?.append('line')
@@ -509,22 +519,28 @@ export class CFDRenderer extends UIControlsRenderer {
 
   /**
    * Positions the tooltip on the page.
-   * @private
    * @param {number} left - The left position for the tooltip.
    * @param {number} top - The top position for the tooltip.
    * @param {number} width - The width for the tooltip.
    */
-  #positionTooltip(left, top, width) {
+  positionTooltip(left, top, width) {
     this.tooltip?.transition().duration(100).style('opacity', 0.9).style('pointer-events', 'auto');
     this.tooltip?.style('left', left - width + 'px').style('top', top + 'px');
   }
 
   /**
+   * Clears the content of the tooltip and the moving line.
+   */
+  clearTooltipContent(x, y) {
+    this.cfdLine?.attr('stroke', 'black').attr('y1', 0).attr('y2', y).attr('x1', x).attr('x2', x).style('display', null);
+    this.tooltip?.selectAll('*').remove();
+  }
+
+  /**
    * Populates the tooltip's content with event data: data, metrics and observation body
-   * @private
    * @param {Object} event - The event data for the tooltip.
    */
-  #populateTooltip(event) {
+  populateTooltip(event) {
     this.tooltip?.append('p').text(formatDateToLocalString(event.date)).attr('class', styles.tooltipDate);
 
     const gridContainer = this.tooltip?.append('div').attr('class', styles.tooltipGrid);
@@ -564,15 +580,6 @@ export class CFDRenderer extends UIControlsRenderer {
         .text(`${event.observationBody.substring(0, 15)}...`)
         .attr('class', styles.tooltipValue);
     }
-  }
-
-  /**
-   * Clears the content of the tooltip and the moving line.
-   * @private
-   */
-  #clearTooltipAndMovingLine(x, y) {
-    this.cfdLine?.attr('stroke', 'black').attr('y1', 0).attr('y2', y).attr('x1', x).attr('x2', x).style('display', null);
-    this.tooltip?.selectAll('*').remove();
   }
 
   //endregion
@@ -632,7 +639,7 @@ export class CFDRenderer extends UIControlsRenderer {
         observationBody: observation?.body,
         observationId: observation?.id,
       };
-      this.#showTooltipAndMovingLine(data);
+      this.showTooltip(data);
       eventName.includes('click') && this.eventBus?.emitEvents(eventName, data);
     }
   }
@@ -642,7 +649,7 @@ export class CFDRenderer extends UIControlsRenderer {
    * @private
    */
   #setupMouseLeaveHandler() {
-    this.chartArea?.on('mouseleave', () => this.hideTooltipAndMovingLine());
+    this.chartArea?.on('mouseleave', () => this.hideTooltip());
   }
 
   /**

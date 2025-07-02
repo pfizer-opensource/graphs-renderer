@@ -51,7 +51,6 @@ export class ControlRenderer extends ScatterplotRenderer {
   }
 
   populateTooltip(event) {
-    console.log('populateTooltip', event);
     this.tooltip
       .style('pointer-events', 'auto')
       .style('opacity', 0.9)

@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import styles from './tooltipStyles.module.css';
 
 /**
  * Represents a generic graphs renderer
@@ -18,6 +19,8 @@ export class Renderer {
 
   constructor(data) {
     this.data = data;
+    this.tooltip = null;
+    this.tooltipTimeout = null;
   }
 
   /**
@@ -142,5 +145,96 @@ export class Renderer {
   /* eslint-disable-next-line no-unused-vars */
   updateGraph(domain) {
     throw new Error('Method not implemented. It must be implemented in subclasses!');
+  }
+
+  /**
+   * Shows the tooltip with provided event data.
+   * @param {Object} event - The event data for the tooltip.
+   */
+  showTooltip(event) {
+    this.clearTooltipTimeout();
+    !this.tooltip && this.createTooltip();
+    this.clearTooltipContent();
+    this.positionTooltip(event.tooltipLeft, event.tooltipTop);
+    this.populateTooltip(event);
+    this.tooltipTimeout = setTimeout(() => {
+      this.hideTooltip();
+    }, 10000);
+
+    this.tooltip.on('mouseleave', () => this.setupMouseLeaveHandler());
+  }
+
+  /**
+   * Populates the tooltip's content with event data: ticket id and observation body
+   * @param {Object} event - The event data for the tooltip.
+   */
+  // eslint-disable-next-line no-unused-vars
+  populateTooltip(event) {
+    throw new Error('populateTooltip() must be implemented by child class');
+  }
+
+  /**
+   * Hides the tooltip.
+   */
+  hideTooltip() {
+    this.clearTooltipTimeout(); // Clear the timeout when manually hiding
+    this.tooltip?.transition().duration(100).style('opacity', 0).style('pointer-events', 'none');
+  }
+
+  clearTooltipTimeout() {
+    if (this.tooltipTimeout) {
+      clearTimeout(this.tooltipTimeout);
+      this.tooltipTimeout = null;
+    }
+  }
+
+  cleanupTooltip() {
+    this.clearTooltipTimeout();
+    this.hideTooltip();
+    if (this.tooltip) {
+      this.tooltip.remove();
+      this.tooltip = null;
+    }
+  }
+
+  /**
+   * Creates a tooltip for the chart used for the observation logging.
+   */
+  createTooltip() {
+    this.tooltip = d3.select('body').append('div').attr('class', styles.chartTooltip).attr('id', 's-tooltip').style('opacity', 0);
+  }
+
+  /**
+   * Positions the tooltip on the page.
+   * @param {number} left - The left position for the tooltip.
+   * @param {number} top - The top position for the tooltip.
+   */
+  positionTooltip(left, top) {
+    this.tooltip.transition().duration(100).style('opacity', 0.9).style('pointer-events', 'auto');
+    this.tooltip.style('left', left + 'px').style('top', top + 'px');
+  }
+
+  /**
+   * Clears the content of the tooltip.
+   */
+  clearTooltipContent() {
+    this.tooltip.selectAll('*').remove();
+  }
+
+  setupMouseLeaveHandler(retries = 10) {
+    const svgNode = this.svg?.node();
+    if (!svgNode || !svgNode.parentNode) {
+      if (retries > 0) {
+        setTimeout(() => this.setupMouseLeaveHandler(retries - 1), 100);
+      } else {
+        console.error('SVG parentNode is not available after retries.');
+      }
+      return;
+    }
+    d3.select(svgNode.parentNode).on('mouseleave', (event) => {
+      if (event.relatedTarget !== this.tooltip?.node()) {
+        this.hideTooltip();
+      }
+    });
   }
 }

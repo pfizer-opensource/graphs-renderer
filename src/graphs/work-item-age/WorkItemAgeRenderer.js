@@ -1,5 +1,4 @@
 import * as d3 from 'd3';
-import styles from '../tooltipStyles.module.css';
 import { Renderer } from '../Renderer.js';
 
 export class WorkItemAgeRenderer extends Renderer {
@@ -194,30 +193,6 @@ export class WorkItemAgeRenderer extends Renderer {
     gy.call(d3.axisLeft(y)).selectAll('text').attr('class', 'axis-label');
   }
 
-  showTooltip(event) {
-    !this.tooltip && this.#createTooltip();
-    this.#clearTooltipContent();
-    this.#positionTooltip(event.tooltipLeft, event.tooltipTop);
-    this.populateTooltip(event);
-    this.tooltip.on('mouseleave', () => this.setupMouseLeaveHandler());
-  }
-
-  /**
-   * Hides the tooltip.
-   */
-  hideTooltip() {
-    console.log('hide tooltip');
-    this.tooltip?.transition().duration(100).style('opacity', 0).style('pointer-events', 'none');
-  }
-
-  /**
-   * Creates a tooltip for the chart used for the observation logging.
-   * @private
-   */
-  #createTooltip() {
-    this.tooltip = d3.select('body').append('div').attr('class', styles.chartTooltip).attr('id', 's-tooltip').style('opacity', 0);
-  }
-
   /**
    * Populates the tooltip's content with event data: ticket id and observation body
    * @private
@@ -240,25 +215,6 @@ export class WorkItemAgeRenderer extends Renderer {
     });
   }
 
-  /**
-   * Positions the tooltip on the page.
-   * @private
-   * @param {number} left - The left position for the tooltip.
-   * @param {number} top - The top position for the tooltip.
-   */
-  #positionTooltip(left, top) {
-    this.tooltip.transition().duration(100).style('opacity', 0.9).style('pointer-events', 'auto');
-    this.tooltip.style('left', left + 'px').style('top', top + 'px');
-  }
-
-  /**
-   * Clears the content of the tooltip.
-   * @private
-   */
-  #clearTooltipContent() {
-    this.tooltip.selectAll('*').remove();
-  }
-
   handleMouseClickEvent(event, d) {
     const observationsData = [];
     d.items.forEach((item) => {
@@ -277,23 +233,6 @@ export class WorkItemAgeRenderer extends Renderer {
 
     this.eventBus?.emitEvents(`work-item-age-click`, data);
     this.showTooltip(data);
-  }
-
-  setupMouseLeaveHandler(retries = 10) {
-    const svgNode = this.svg?.node();
-    if (!svgNode || !svgNode.parentNode) {
-      if (retries > 0) {
-        setTimeout(() => this.setupMouseLeaveHandler(retries - 1), 100);
-      } else {
-        console.error('SVG parentNode is not available after retries.');
-      }
-      return;
-    }
-    d3.select(svgNode.parentNode).on('mouseleave', (event) => {
-      if (event.relatedTarget !== this.tooltip?.node()) {
-        this.hideTooltip();
-      }
-    });
   }
 
   setupObservationLogging(observations) {
@@ -344,10 +283,7 @@ export class WorkItemAgeRenderer extends Renderer {
   }
 
   drawPercentileLines(data, y) {
-    console.log('drawPercentileLines');
     const dataSortedByAge = [...data].sort((a, b) => a.age - b.age);
-    console.log('dataSortedByAge');
-    console.table(dataSortedByAge);
     const percentile1 = this.computePercentileLine(dataSortedByAge, 0.5);
     const percentile2 = this.computePercentileLine(dataSortedByAge, 0.75);
     const percentile3 = this.computePercentileLine(dataSortedByAge, 0.85);
