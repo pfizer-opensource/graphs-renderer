@@ -5,7 +5,7 @@
   height: max-content;
   padding: 8px;
   font: 14px sans-serif;
-  background: #e2ecfd;
+  background: #b1b1b1;
   border: 0;
   border-radius: 8px;
   z-index: 1;
@@ -44,13 +44,13 @@
 
 /* Specific metric colors */
 .cycleTime {
-  color: #d57500; /* orange */
+  color: yellow; /* orange */
 }
 
 .leadTime {
-  color: #0062a5; /* blue */
+  color: indigo; /* blue */
 }
 
 .wip {
-  color: #dd0030; /* pinkish-red */
+  color: red; /* pinkish-red */
 }

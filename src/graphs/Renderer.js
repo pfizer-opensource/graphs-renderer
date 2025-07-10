@@ -7,9 +7,9 @@ import styles from './tooltipStyles.module.css';
 export class Renderer {
   margin = { top: 30, right: 40, bottom: 70, left: 40 };
   width = 1040 - this.margin.left - this.margin.right;
-  height = 460 - this.margin.top - this.margin.bottom;
+  height = 380 - this.margin.top - this.margin.bottom;
   axisLabelFontSize = 14;
-  focusHeight = 120;
+  focusHeight = 90;
   gx;
   gy;
   x;

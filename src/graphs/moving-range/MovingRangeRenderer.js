@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 
 export class MovingRangeRenderer extends ScatterplotRenderer {
   color = '#0ea5e9';
-  timeScale = 'linear';
+  timeScale = 'logarithmic';
 
   constructor(data, avgMovingRangeFunc, workTicketsURL, chartName) {
     super(data);
