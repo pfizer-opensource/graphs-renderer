@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 
 export class ControlRenderer extends ScatterplotRenderer {
   color = '#0ea5e9';
-  timeScale = 'linear';
+  timeScale = 'logarithmic';
   connectDots = false;
 
   constructor(data, avgMovingRangeFunc, chartName, workTicketsURL) {
