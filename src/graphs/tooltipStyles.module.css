@@ -44,11 +44,11 @@
 
 /* Specific metric colors */
 .cycleTime {
-  color: yellow; /* orange */
+  color: indigo; /* orange */
 }
 
 .leadTime {
-  color: indigo; /* blue */
+  color: yellow; /* blue */
 }
 
 .wip {
