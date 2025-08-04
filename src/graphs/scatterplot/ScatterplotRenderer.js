@@ -531,23 +531,34 @@ export class ScatterplotRenderer extends UIControlsRenderer {
    * @private
    */
   handleMouseClickEvent(event, d) {
+    // Find all tickets with the same values
+    const overlappingTickets = this.data.filter(
+      (ticket) => ticket.deliveredDate.getTime() === d.deliveredDate.getTime() && ticket.leadTime === d.leadTime
+    );
+
     let data = {
       ...d,
       tooltipLeft: event.pageX,
       tooltipTop: event.pageY,
+      overlappingTickets: overlappingTickets,
+      ticketCount: overlappingTickets.length,
     };
-    if (this.#areMetricsEnabled) {
-      const observation = this.observations?.data?.find((o) => o.work_item === d.ticketId && o.chart_type === this.chartType);
+
+    if (this.#areMetricsEnabled && this.observations) {
+      const observations = overlappingTickets
+        .map((ticket) => this.observations?.data?.find((o) => o.work_item === ticket.ticketId && o.chart_type === this.chartType))
+        .filter((obs) => obs);
+
       data = {
         ...data,
         date: d.deliveredDate,
         metrics: {
           leadTime: d.leadTime,
         },
-        observationBody: observation?.body,
-        observationId: observation?.id,
+        observations: observations,
       };
     }
+
     this.eventBus?.emitEvents(`${this.chartName}-click`, data);
     this.showTooltip(data);
   }
@@ -585,7 +596,7 @@ export class ScatterplotRenderer extends UIControlsRenderer {
     return width;
   }
 
-  drawHorizontalLine(yScale, yValue, color, id, text = '') {
+  drawHorizontalLine(yScale, yValue, color, id, text = '', dash = '7') {
     let lineEl = this.svg.select('#line-' + id);
     let textEl = this.svg.select('#text-' + id);
 
@@ -597,7 +608,7 @@ export class ScatterplotRenderer extends UIControlsRenderer {
         .attr('id', 'line-' + id)
         .attr('class', 'average-line')
         .attr('stroke-width', 3)
-        .attr('stroke-dasharray', '7');
+        .attr('stroke-dasharray', dash);
       textEl = this.svg
         .append('text')
         .attr('text-anchor', 'start')

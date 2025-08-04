@@ -1,15 +1,13 @@
 import { UIControlsRenderer } from '../UIControlsRenderer.js';
 
 export class PBCRenderer extends UIControlsRenderer {
-  constructor(controlData, movingRangeData, avgMovingRangeFunc, workTicketsURL, chartName = 'pbc') {
+  constructor(controlData, movingRangeData, workTicketsURL, chartName = 'pbc') {
     super(controlData);
     this.controlData = controlData;
     this.movingRangeData = movingRangeData;
-    this.avgMovingRangeFunc = avgMovingRangeFunc;
     this.workTicketsURL = workTicketsURL;
     this.chartName = chartName;
     this.chartType = 'PBC';
-
     // Child renderers
     this.controlRenderer = null;
     this.movingRangeRenderer = null;
@@ -19,14 +17,8 @@ export class PBCRenderer extends UIControlsRenderer {
    * Initialize child renderers with their respective data
    */
   initializeRenderers(ControlRenderer, MovingRangeRenderer) {
-    this.controlRenderer = new ControlRenderer(this.controlData, this.avgMovingRangeFunc, `${this.chartName}-control`, this.workTicketsURL);
-
-    this.movingRangeRenderer = new MovingRangeRenderer(
-      this.movingRangeData, // Moving range calculated data
-      this.avgMovingRangeFunc,
-      this.workTicketsURL,
-      `${this.chartName}-moving-range`
-    );
+    this.controlRenderer = new ControlRenderer(this.controlData, `${this.chartName}-control`, this.workTicketsURL);
+    this.movingRangeRenderer = new MovingRangeRenderer(this.movingRangeData, this.workTicketsURL, `${this.chartName}-moving-range`);
   }
 
   /**
