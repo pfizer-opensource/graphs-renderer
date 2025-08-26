@@ -5,6 +5,7 @@
   "main": "./dist/graphs-renderer.js",
   "module": "./dist/graphs-renderer.js",
   "type": "module",
+
   "scripts": {
     "build:dev": "webpack --mode development",
     "build:prod": "webpack --mode production",
