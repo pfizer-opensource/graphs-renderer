@@ -104,7 +104,7 @@ export class ScatterplotRenderer extends UIControlsRenderer {
       });
 
     const brushArea = this.addClipPath(svgBrush, `${this.chartName}-brush-clip`, this.width, this.focusHeight - this.margin.top + 1);
-    this.drawScatterplot(brushArea, this.data, this.x, this.y.copy().range([this.focusHeight - this.margin.top - 2, 2]));
+    this.drawScatterplot(brushArea, this.data, this.x, this.y.copy().range([this.focusHeight - this.margin.top - 2, 10]));
     this.changeTimeInterval(false);
     this.drawXAxis(svgBrush.append('g'), this.x, this.focusHeight - this.margin.top);
     this.brushGroup = brushArea;
@@ -136,10 +136,14 @@ export class ScatterplotRenderer extends UIControlsRenderer {
 
   updateChartArea(domain) {
     const maxValue = d3.max(this.data, (d) => (d.deliveredDate <= domain[1] && d.deliveredDate >= domain[0] ? d.leadTime : -1));
-    const maxY = this.topLimit ? Math.max(maxValue, this.topLimit + 2) : maxValue;
+    const minYValue = 128;
+    const maxY = this.topLimit ? Math.max(maxValue, this.topLimit + 2, minYValue) : Math.max(maxValue + 2, minYValue);
     this.reportingRangeDays = calculateDaysBetweenDates(domain[0], domain[1]).roundedDays;
     this.currentXScale = this.x.copy().domain(domain);
-    this.currentYScale = this.y.copy().domain([1, maxY]).nice();
+    this.currentYScale = this.y.copy().domain([0, maxY]).nice();
+    if (this.timeScale === 'logarithmic') {
+      this.currentYScale = this.y.copy().domain([0.5, maxY]).nice();
+    }
     const focusData = this.data.filter((d) => d.deliveredDate <= domain[1] && d.deliveredDate >= domain[0]);
     this.changeTimeInterval(false);
     this.drawXAxis(this.gx, this.currentXScale, this.height, true);
@@ -306,7 +310,11 @@ export class ScatterplotRenderer extends UIControlsRenderer {
 
   computeYScale() {
     // Start domain from a small positive value: 0.6 to avoid log(0) issues
-    const yDomain = [0.5, d3.max(this.data, (d) => d.leadTime)];
+    const max = Math.max(
+      d3.max(this.data, (d) => d.leadTime),
+      this.topLimit || 0
+    );
+    const yDomain = [0.5, max];
 
     if (this.timeScale === 'logarithmic') {
       this.y = d3
@@ -353,25 +361,38 @@ export class ScatterplotRenderer extends UIControlsRenderer {
       const axis = this.createXAxis(x);
       const axisHeight = 20;
       let grayBand = g.select('.axis-background');
+      let yAxisBand = 30;
+      if (this.timeScale === 'logarithmic') {
+        yAxisBand = 0;
+      }
       if (grayBand.empty()) {
         grayBand = g
           .append('rect')
           .attr('class', 'axis-background')
           .attr('x', 0)
-          .attr('y', 4)
+          .attr('y', yAxisBand)
           .attr('width', this.width)
           .attr('height', axisHeight)
           .attr('fill', 'gray')
           .attr('opacity', 0.5)
-          .attr('cursor', 'pointer');
+          .attr('cursor', 'pointer')
+          .attr('pointer-events', 'all');
+      } else {
+        grayBand.attr('y', yAxisBand);
       }
-      const xAxisGroup = g.attr('class', 'x-axis-group').attr('transform', `translate(0, ${height})`);
+      const xAxisGroup = g.attr('class', 'x-axis-group').attr('transform', `translate(0, ${height - this.margin.top})`);
       xAxisGroup.call(axis);
-      xAxisGroup.selectAll('.tick line').attr('stroke', 'black').attr('opacity', 0.3).attr('y1', 15).attr('y2', -this.height);
+      grayBand.raise();
+      xAxisGroup
+        .selectAll('.tick line')
+        .attr('stroke', 'black')
+        .attr('opacity', 0.3)
+        .attr('y1', yAxisBand)
+        .attr('y2', -this.height + this.margin.top);
       xAxisGroup
         .selectAll('.tick text')
         .attr('fill', 'black')
-        .attr('y', axisHeight + 6)
+        .attr('y', yAxisBand + axisHeight + 5)
         .attr('dy', '10px');
       xAxisGroup.select('.domain').remove();
       grayBand.on('mouseover', function () {
@@ -418,9 +439,14 @@ export class ScatterplotRenderer extends UIControlsRenderer {
         .attr('transform', `translate(0, ${y(0.5)})`) // Position text at y(0.5)
         .append('text')
         .attr('x', -4)
-        .attr('dy', '.32em')
-        .attr('stroke', 'black')
+        .attr('fill', 'black')
         .text('0');
+
+      // Remove the generated tick text with 0.5 for the 0 axis line
+      this.svg
+        .selectAll('.tick text')
+        .filter((d) => d === 0.5)
+        .remove();
     }
   }
 
@@ -505,6 +531,7 @@ export class ScatterplotRenderer extends UIControlsRenderer {
       });
     event.observationBody && this.tooltip.append('p').text('Observation: ' + event.observationBody);
   }
+
   //endregion
 
   //region Metrics

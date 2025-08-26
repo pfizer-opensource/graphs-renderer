@@ -224,7 +224,7 @@ export class ControlRenderer extends ScatterplotRenderer {
       .enter()
       .append('path')
       .attr('class', 'dot-line')
-      .attr('id', (d) => `line-${d.ticketId}`)
+      .attr('id', (d) => `dot-line-${d.ticketId}`)
       .attr('d', line)
       .attr('stroke', 'black')
       .attr('stroke-width', 2)
