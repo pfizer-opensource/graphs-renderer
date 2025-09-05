@@ -13,6 +13,7 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
     this.dotClass = 'moving-range-dot';
     this.yAxisLabel = 'Moving Range';
     this.limitData = {};
+    this.signals = [];
     this.visibleLimits = {};
   }
 
@@ -22,6 +23,7 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
     this.drawArea();
     this.setupMouseLeaveHandler();
     this.drawLimits();
+    this.drawSignals();
   }
 
   setLimitData(limitData) {
@@ -30,7 +32,46 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
       url: limitData?.URL || null,
     };
     this.topLimit = limitData?.URL;
+    this.data.forEach((d) => {
+      if (d.leadTime > this.topLimit) {
+        this.signals.push(`mr-${d.workItem1}-${d.workItem2}`);
+      }
+    });
+    console.log(this.signals);
     this.drawLimits();
+  }
+
+  setProcessSignalsData(signalsData) {
+    this.processSignalsData = {
+      largeChange: signalsData?.largeChange || null,
+    };
+  }
+
+  setActiveProcessSignal(signalType) {
+    this.hideSignals();
+    this.activeProcessSignal = signalType;
+    this.showActiveSignal();
+  }
+
+  hideSignals() {
+    this.svg.selectAll('.signal-point').classed('signal-point', false).attr('fill', this.color);
+  }
+
+  showActiveSignal() {
+    if (!this.activeProcessSignal || !this.processSignalsData[this.activeProcessSignal]) {
+      return;
+    }
+
+    // const signals = this.processSignalsData[this.activeProcessSignal];
+    this.drawSignals();
+  }
+
+  drawSignals() {
+    if (this.signals?.length > 0) {
+      this.signals.forEach((id) => {
+        this.svg.select(`#${id}`).classed('signal-point', true).transition().duration(200).attr('fill', 'orange');
+      });
+    }
   }
 
   drawLimits() {
@@ -151,6 +192,7 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
       .enter()
       .append('circle')
       .attr('class', this.dotClass)
+      .attr('id', (d) => `mr-${d.workItem1}-${d.workItem2}`)
       .attr('r', (d) => {
         const overlapping = data.filter(
           (item) => item.deliveredDate.getTime() === d.deliveredDate.getTime() && item.leadTime === d.leadTime
@@ -189,6 +231,7 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
       .y((d) => this.applyYScale(this.currentYScale, d.leadTime));
     this.chartArea.selectAll('.dot-line').attr('d', line);
     this.drawLimits();
+    this.drawSignals();
   }
 
   cleanup() {
