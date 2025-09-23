@@ -25,7 +25,7 @@ export class ScatterplotRenderer extends UIControlsRenderer {
    * @param {Array.<{
    *   delivered: string,
    *   noOfDays: number,
-   *   ticketId: string
+   *   sourceId: string
    * }>} data - array of ticket objects containing the ticket number, the number of days it took to be delivered and the delivered date
    *
    * @example
@@ -34,7 +34,7 @@ export class ScatterplotRenderer extends UIControlsRenderer {
    *   {
    *     "delivered": "2023-01-09T15:12:03.000Z",
    *     "noOfDays": 3,
-   *     "ticketId": "T-9125349"
+   *     "sourceId": "T-9125349"
    *   }
    * ];
    */
@@ -135,7 +135,7 @@ export class ScatterplotRenderer extends UIControlsRenderer {
   }
 
   updateChartArea(domain) {
-    const maxValue = d3.max(this.data, (d) => (d.deliveredDate <= domain[1] && d.deliveredDate >= domain[0] ? d.leadTime : -1));
+    const maxValue = d3.max(this.data, (d) => (d.deliveredDate <= domain[1] && d.deliveredDate >= domain[0] ? d.value : -1));
     const minYValue = 128;
     const maxY = this.topLimit ? Math.max(maxValue, this.topLimit + 2, minYValue) : Math.max(maxValue + 2, minYValue);
     this.reportingRangeDays = calculateDaysBetweenDates(domain[0], domain[1]).roundedDays;
@@ -152,7 +152,7 @@ export class ScatterplotRenderer extends UIControlsRenderer {
     this.chartArea
       .selectAll(`.${this.dotClass}`)
       .attr('cx', (d) => this.currentXScale(d.deliveredDate))
-      .attr('cy', (d) => this.applyYScale(this.currentYScale, d.leadTime))
+      .attr('cy', (d) => this.applyYScale(this.currentYScale, d.value))
       .attr('fill', this.color);
     return focusData;
   }
@@ -209,7 +209,7 @@ export class ScatterplotRenderer extends UIControlsRenderer {
       .attr('data-date', (d) => d.deliveredDate)
       .attr('r', 5)
       .attr('cx', (d) => x(d.deliveredDate))
-      .attr('cy', (d) => this.applyYScale(y, d.leadTime))
+      .attr('cy', (d) => this.applyYScale(y, d.value))
       .style('cursor', 'pointer')
       .attr('fill', this.color);
   }
@@ -311,7 +311,7 @@ export class ScatterplotRenderer extends UIControlsRenderer {
   computeYScale() {
     // Start domain from a small positive value: 0.6 to avoid log(0) issues
     const max = Math.max(
-      d3.max(this.data, (d) => d.leadTime),
+      d3.max(this.data, (d) => d.value),
       this.topLimit || 0
     );
     const yDomain = [0.5, max];
@@ -324,7 +324,7 @@ export class ScatterplotRenderer extends UIControlsRenderer {
         .range([this.height - 34, 0])
         .nice();
     } else if (this.timeScale === 'linear') {
-      this.y = this.computeLinearScale([0, d3.max(this.data, (d) => d.leadTime)], [this.height - 4, 0]).nice();
+      this.y = this.computeLinearScale([0, d3.max(this.data, (d) => d.value)], [this.height - 4, 0]).nice();
     }
   }
 
@@ -494,14 +494,14 @@ export class ScatterplotRenderer extends UIControlsRenderer {
       .selectAll('ring')
       .data(
         this.data.filter((d) =>
-          this.observations?.data?.some((o) => o.work_item.toString() === d.ticketId.toString() && o.chart_type === this.chartType)
+          this.observations?.data?.some((o) => o.work_item.toString() === d.sourceId.toString() && o.chart_type === this.chartType)
         )
       )
       .enter()
       .append('circle')
       .attr('class', 'ring')
       .attr('cx', (d) => this.currentXScale(d.deliveredDate))
-      .attr('cy', (d) => this.applyYScale(this.currentYScale, d.leadTime))
+      .attr('cy', (d) => this.applyYScale(this.currentYScale, d.value))
       .attr('r', 8)
       .attr('fill', 'none')
       .attr('stroke', 'black')
@@ -523,8 +523,8 @@ export class ScatterplotRenderer extends UIControlsRenderer {
       .style('opacity', 0.9)
       .append('a')
       .style('text-decoration', 'underline')
-      .attr('href', `${this.workTicketsURL}/${event.ticketId}`)
-      .text(event.ticketId)
+      .attr('href', `${this.workTicketsURL}/${event.sourceId}`)
+      .text(event.sourceId)
       .attr('target', '_blank')
       .on('click', () => {
         this.hideTooltip();
@@ -560,7 +560,7 @@ export class ScatterplotRenderer extends UIControlsRenderer {
   handleMouseClickEvent(event, d) {
     // Find all tickets with the same values
     const overlappingTickets = this.data.filter(
-      (ticket) => ticket.deliveredDate.getTime() === d.deliveredDate.getTime() && ticket.leadTime === d.leadTime
+      (ticket) => ticket.deliveredDate.getTime() === d.deliveredDate.getTime() && ticket.value === d.value
     );
 
     let data = {
@@ -573,14 +573,14 @@ export class ScatterplotRenderer extends UIControlsRenderer {
 
     if (this.#areMetricsEnabled && this.observations) {
       const observations = overlappingTickets
-        .map((ticket) => this.observations?.data?.find((o) => o.work_item === ticket.ticketId && o.chart_type === this.chartType))
+        .map((ticket) => this.observations?.data?.find((o) => o.work_item === ticket.sourceId && o.chart_type === this.chartType))
         .filter((obs) => obs);
 
       data = {
         ...data,
         date: d.deliveredDate,
         metrics: {
-          leadTime: d.leadTime,
+          leadTime: d.value,
         },
         observations: observations,
       };

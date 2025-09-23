@@ -28,16 +28,15 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
 
   setLimitData(limitData) {
     this.limitData = {
-      averageMR: limitData?.averageMR || null,
-      url: limitData?.URL || null,
+      averageMR: limitData?.averageMR,
+      url: limitData?.URL,
     };
     this.topLimit = limitData?.URL;
     this.data.forEach((d) => {
-      if (d.leadTime > this.topLimit) {
-        this.signals.push(`mr-${d.workItem1}-${d.workItem2}`);
+      if (d.value > this.topLimit) {
+        this.signals.push(`mr-${d.fromSourceId}-${d.toSourceId}`);
       }
     });
-    console.log(this.signals);
     this.drawLimits();
   }
 
@@ -79,7 +78,7 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
     this.svg.selectAll('[id^="line-"], [id^="text-"]').remove();
     // Draw new limits
     Object.entries(this.limitData).forEach(([limitType, limitValue]) => {
-      if (limitValue) {
+      if (limitValue !== null) {
         this.drawLimit(limitType, limitValue);
       }
     });
@@ -134,8 +133,8 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
         item1Div
           .append('a')
           .style('text-decoration', 'underline')
-          .attr('href', `${this.workTicketsURL}/${ticket.workItem1}`)
-          .text(ticket.workItem1)
+          .attr('href', `${this.workTicketsURL}`)
+          .text(ticket.fromSourceId)
           .attr('target', '_blank')
           .on('click', () => {
             this.hideTooltip();
@@ -145,8 +144,8 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
         item2Div
           .append('a')
           .style('text-decoration', 'underline')
-          .attr('href', `${this.workTicketsURL}/${ticket.workItem2}`)
-          .text(ticket.workItem2)
+          .attr('href', `${this.workTicketsURL}`)
+          .text(ticket.toSourceId)
           .attr('target', '_blank')
           .on('click', () => {
             this.hideTooltip();
@@ -165,8 +164,8 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
         .append('div')
         .append('a')
         .style('text-decoration', 'underline')
-        .attr('href', `${this.workTicketsURL}/${event.workItem1}`)
-        .text(event.workItem1)
+        .attr('href', `${this.workTicketsURL}`)
+        .text(event.fromSourceId)
         .attr('target', '_blank')
         .on('click', () => {
           this.hideTooltip();
@@ -176,8 +175,8 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
         .append('div')
         .append('a')
         .style('text-decoration', 'underline')
-        .attr('href', `${this.workTicketsURL}/${event.workItem2}`)
-        .text(event.workItem2)
+        .attr('href', `${this.workTicketsURL}`)
+        .text(event.toSourceId)
         .attr('target', '_blank')
         .on('click', () => {
           this.hideTooltip();
@@ -192,15 +191,13 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
       .enter()
       .append('circle')
       .attr('class', this.dotClass)
-      .attr('id', (d) => `mr-${d.workItem1}-${d.workItem2}`)
+      .attr('id', (d) => `mr-${d.fromSourceId}-${d.toSourceId}`)
       .attr('r', (d) => {
-        const overlapping = data.filter(
-          (item) => item.deliveredDate.getTime() === d.deliveredDate.getTime() && item.leadTime === d.leadTime
-        );
+        const overlapping = data.filter((item) => item.deliveredDate.getTime() === d.deliveredDate.getTime() && item.value === d.value);
         return overlapping.length > 1 ? 7 : 5;
       })
       .attr('cx', (d) => x(d.deliveredDate))
-      .attr('cy', (d) => this.applyYScale(y, d.leadTime))
+      .attr('cy', (d) => this.applyYScale(y, d.value))
       .style('cursor', 'pointer')
       .attr('fill', this.color)
       .on('click', (event, d) => this.handleMouseClickEvent(event, { ...d, date: d.deliveredDate }));
@@ -209,14 +206,14 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
     const line = d3
       .line()
       .x((d) => x(d.deliveredDate))
-      .y((d) => this.applyYScale(y, d.leadTime));
+      .y((d) => this.applyYScale(y, d.value));
     chartArea
       .selectAll('dot-line')
       .data([data])
       .enter()
       .append('path')
       .attr('class', 'dot-line')
-      .attr('id', (d) => `dot-line-${d.ticketId}`)
+      .attr('id', (d) => `dot-line-${d.sourceId}`)
       .attr('d', line)
       .attr('stroke', 'black')
       .attr('stroke-width', 2)
@@ -228,7 +225,7 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
     const line = d3
       .line()
       .x((d) => this.currentXScale(d.deliveredDate))
-      .y((d) => this.applyYScale(this.currentYScale, d.leadTime));
+      .y((d) => this.applyYScale(this.currentYScale, d.value));
     this.chartArea.selectAll('.dot-line').attr('d', line);
     this.drawLimits();
     this.drawSignals();

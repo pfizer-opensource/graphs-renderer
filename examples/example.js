@@ -97,7 +97,7 @@ function renderScatterplotAndHistogramGraphs(data, reportingRangeDays, controlsE
     }
 
     //filter leadTimeDataSet values to not exceed 80 days lead time
-    const filteredLeadTimeDataSet = leadTimeDataSet.filter((d) => d.leadTime <= 80);
+    const filteredLeadTimeDataSet = leadTimeDataSet.filter((d) => d.value <= 80);
 
     //Moving range chart
     const movingRangeGraph = new MovingRangeGraph(filteredLeadTimeDataSet);
