@@ -48,7 +48,7 @@ export class ScatterplotGraph {
    * @returns {Array.<{
    *   delivered: string,
    *   noOfDays: number,
-   *   ticketId: string
+   *   sourceId: string
    * }>} dataSet - array of ticket objects containing the ticket number, the number of days it took to be delivered and the delivered date, computed from the data tickets array received in the constructor
    *
    * @example
@@ -57,7 +57,7 @@ export class ScatterplotGraph {
    *   {
    *     "delivered": "2023-01-09T15:12:03.000Z",
    *     "noOfDays": 3,
-   *     "ticketId": "T-9172349"
+   *     "sourceId": "T-9172349"
    *   }
    * ];
    */
@@ -69,19 +69,19 @@ export class ScatterplotGraph {
         const scatterplotTicket = {
           deliveredDate: deliveredDate,
           deliveredTimestamp: ticket.delivered,
-          leadTime: 0,
-          ticketId: ticket.work_id,
+          value: 0,
+          sourceId: ticket.work_id,
           ticketType: ticket.indexes?.find((i) => i.name === 'ticket_type')?.value || '',
         };
         for (const state of this.states) {
           if (ticket[state]) {
             const diff = calculateDaysBetweenDates(ticket[state], ticket.delivered);
-            scatterplotTicket.leadTime = diff.exactTimeDiff;
+            scatterplotTicket.value = diff.exactTimeDiff;
             break;
           }
         }
-        if (scatterplotTicket.leadTime <= 0) {
-          console.warn('Invalid lead time:', scatterplotTicket.leadTime, 'Ticket has incorrect timestamps', ticket);
+        if (scatterplotTicket.value <= 0) {
+          console.warn('Invalid lead time:', scatterplotTicket.value, 'Ticket has incorrect timestamps', ticket);
           return;
         }
         dataSet.push(scatterplotTicket);

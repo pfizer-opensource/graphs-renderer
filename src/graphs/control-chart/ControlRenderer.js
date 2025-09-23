@@ -160,8 +160,8 @@ export class ControlRenderer extends ScatterplotRenderer {
         ticketDiv
           .append('a')
           .style('text-decoration', 'underline')
-          .attr('href', `${this.workTicketsURL}/${ticket.ticketId}`)
-          .text(ticket.ticketId)
+          .attr('href', `${this.workTicketsURL}/${ticket.sourceId}`)
+          .text(ticket.sourceId)
           .attr('target', '_blank')
           .on('click', () => {
             this.hideTooltip();
@@ -180,8 +180,8 @@ export class ControlRenderer extends ScatterplotRenderer {
         .append('div')
         .append('a')
         .style('text-decoration', 'underline')
-        .attr('href', `${this.workTicketsURL}/${event.ticketId}`)
-        .text(event.ticketId)
+        .attr('href', `${this.workTicketsURL}/${event.sourceId}`)
+        .text(event.sourceId)
         .attr('target', '_blank')
         .on('click', () => {
           this.hideTooltip();
@@ -196,16 +196,14 @@ export class ControlRenderer extends ScatterplotRenderer {
       .enter()
       .append('circle')
       .attr('class', this.dotClass)
-      .attr('id', (d) => `control-${d.ticketId}`)
+      .attr('id', (d) => `control-${d.sourceId}`)
       .attr('data-date', (d) => d.deliveredDate)
       .attr('r', (d) => {
-        const overlapping = data.filter(
-          (item) => item.deliveredDate.getTime() === d.deliveredDate.getTime() && item.leadTime === d.leadTime
-        );
+        const overlapping = data.filter((item) => item.deliveredDate.getTime() === d.deliveredDate.getTime() && item.value === d.value);
         return overlapping.length > 1 ? 7 : 5;
       })
       .attr('cx', (d) => x(d.deliveredDate))
-      .attr('cy', (d) => this.applyYScale(y, d.leadTime))
+      .attr('cy', (d) => this.applyYScale(y, d.value))
       .style('cursor', 'pointer')
       .attr('fill', this.color)
       .on('click', (event, d) => this.handleMouseClickEvent(event, d));
@@ -217,14 +215,14 @@ export class ControlRenderer extends ScatterplotRenderer {
     const line = d3
       .line()
       .x((d) => x(d.deliveredDate))
-      .y((d) => this.applyYScale(y, d.leadTime));
+      .y((d) => this.applyYScale(y, d.value));
     chartArea
       .selectAll('dot-line')
       .data([data])
       .enter()
       .append('path')
       .attr('class', 'dot-line')
-      .attr('id', (d) => `dot-line-${d.ticketId}`)
+      .attr('id', (d) => `dot-line-${d.sourceId}`)
       .attr('d', line)
       .attr('stroke', 'black')
       .attr('stroke-width', 2)
@@ -237,7 +235,7 @@ export class ControlRenderer extends ScatterplotRenderer {
       const line = d3
         .line()
         .x((d) => this.currentXScale(d.deliveredDate))
-        .y((d) => this.applyYScale(this.currentYScale, d.leadTime));
+        .y((d) => this.applyYScale(this.currentYScale, d.value));
       this.chartArea.selectAll('.dot-line').attr('d', line);
     }
     this.drawLimits();

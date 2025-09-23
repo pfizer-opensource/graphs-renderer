@@ -20,7 +20,7 @@ export class HistogramRenderer extends Renderer {
    * @param {Array.<{
    *   delivered: string,
    *   noOfDays: number,
-   *   ticketId: string
+   *   sourceId: string
    * }>} data - array of ticket objects containing the ticket number, the number of days it took to be delivered and the delivered date
    *
    * @example
@@ -29,7 +29,7 @@ export class HistogramRenderer extends Renderer {
    *   {
    *     "delivered": "2023-01-09T15:12:03.000Z",
    *     "noOfDays": 3,
-   *     "ticketId": "T-9128349"
+   *     "sourceId": "T-9128349"
    *   }
    * ];
    * @param {Object} eventBus - event bus object for communicating with the other graphs through events

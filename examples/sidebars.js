@@ -136,7 +136,7 @@ function clearObservationForm() {
 function initializeScatterplotForm(data) {
   cfdDiv.classList.add("hidden");
   scatterplotDiv.classList.remove("hidden");
-  workItemInput.value = data.ticketId || "";
+  workItemInput.value = data.sourceId || "";
   leadTimeInput.value = data.metrics.leadTime ? data.metrics.leadTime + " days" : "-";
 }
 
