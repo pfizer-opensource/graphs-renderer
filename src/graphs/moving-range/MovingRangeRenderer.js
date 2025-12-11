@@ -18,6 +18,7 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
   }
 
   renderGraph(graphElementSelector) {
+    this.graphElementSelector = graphElementSelector;
     this.drawSvg(graphElementSelector);
     this.drawAxes();
     this.drawArea();
@@ -74,7 +75,7 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
   }
 
   drawLimits() {
-    // Remove existing limits
+    // Remove existing limits first
     this.svg.selectAll('[id^="line-"], [id^="text-"]').remove();
     // Draw new limits
     Object.entries(this.limitData).forEach(([limitType, limitValue]) => {
@@ -185,15 +186,20 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
   }
 
   drawScatterplot(chartArea, data, x, y) {
+    // Ensure deliveredDate is a Date object
+    const safeData = data.map((d) => ({
+      ...d,
+      deliveredDate: d.deliveredDate instanceof Date ? d.deliveredDate : new Date(d.deliveredDate),
+    }));
     chartArea
       .selectAll(`.${this.dotClass}`)
-      .data(data)
+      .data(safeData)
       .enter()
       .append('circle')
       .attr('class', this.dotClass)
       .attr('id', (d) => `mr-${d.fromSourceId}-${d.toSourceId}`)
       .attr('r', (d) => {
-        const overlapping = data.filter((item) => item.deliveredDate.getTime() === d.deliveredDate.getTime() && item.value === d.value);
+        const overlapping = safeData.filter((item) => item.deliveredDate.getTime() === d.deliveredDate.getTime() && item.value === d.value);
         return overlapping.length > 1 ? 7 : 5;
       })
       .attr('cx', (d) => x(d.deliveredDate))
@@ -209,7 +215,7 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
       .y((d) => this.applyYScale(y, d.value));
     chartArea
       .selectAll('dot-line')
-      .data([data])
+      .data([safeData])
       .enter()
       .append('path')
       .attr('class', 'dot-line')
@@ -229,6 +235,10 @@ export class MovingRangeRenderer extends ScatterplotRenderer {
     this.chartArea.selectAll('.dot-line').attr('d', line);
     this.drawLimits();
     this.drawSignals();
+  }
+
+  clearGraph(graphElementSelector) {
+    this.svg.select(graphElementSelector).selectAll('*').remove();
   }
 
   cleanup() {

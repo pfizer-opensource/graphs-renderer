@@ -136,6 +136,7 @@ export class ControlRenderer extends ScatterplotRenderer {
   }
 
   renderGraph(graphElementSelector) {
+    this.graphElementSelector = graphElementSelector;
     this.drawSvg(graphElementSelector);
     this.drawAxes();
     this.drawArea();
@@ -190,16 +191,21 @@ export class ControlRenderer extends ScatterplotRenderer {
   }
 
   drawScatterplot(chartArea, data, x, y) {
+    // Ensure deliveredDate is a Date object
+    const safeData = data.map((d) => ({
+      ...d,
+      deliveredDate: d.deliveredDate instanceof Date ? d.deliveredDate : new Date(d.deliveredDate),
+    }));
     chartArea
       .selectAll(`.${this.dotClass}`)
-      .data(data)
+      .data(safeData)
       .enter()
       .append('circle')
       .attr('class', this.dotClass)
       .attr('id', (d) => `control-${d.sourceId}`)
       .attr('data-date', (d) => d.deliveredDate)
       .attr('r', (d) => {
-        const overlapping = data.filter((item) => item.deliveredDate.getTime() === d.deliveredDate.getTime() && item.value === d.value);
+        const overlapping = safeData.filter((item) => item.deliveredDate.getTime() === d.deliveredDate.getTime() && item.value === d.value);
         return overlapping.length > 1 ? 7 : 5;
       })
       .attr('cx', (d) => x(d.deliveredDate))
@@ -207,7 +213,7 @@ export class ControlRenderer extends ScatterplotRenderer {
       .style('cursor', 'pointer')
       .attr('fill', this.color)
       .on('click', (event, d) => this.handleMouseClickEvent(event, d));
-    this.connectDots && this.generateLines(chartArea, data, x, y);
+    this.connectDots && this.generateLines(chartArea, safeData, x, y);
   }
 
   generateLines(chartArea, data, x, y) {

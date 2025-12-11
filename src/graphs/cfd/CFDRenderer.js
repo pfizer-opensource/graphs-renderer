@@ -133,17 +133,43 @@ export class CFDRenderer extends UIControlsRenderer {
   }
 
   /**
-   * Clears the CFD graph and brush from the specified DOM elements.
-   * @param {string} graphElementSelector - Selector of the DOM element to clear the graph.
-   * @param {string} cfdBrushElementSelector - Selector of the DOM element to clear the brush.
+   * Updates the renderer's data and re-renders the graph, preserving persistent props.
+   * @param {Array} newData - The new data to render.
+   */
+  updateData(newData) {
+    this.data = newData;
+    const dataDates = this.data.map((d) => new Date(d.date));
+    const minDate = d3.min(dataDates);
+    const maxDate = d3.max(dataDates);
+
+    if (this.selectedTimeRange) {
+      let [selectedStart, selectedEnd] = this.selectedTimeRange;
+      selectedStart = selectedStart < minDate ? minDate : selectedStart;
+      selectedEnd = selectedEnd > maxDate ? maxDate : selectedEnd;
+      this.selectedTimeRange = [selectedStart, selectedEnd];
+    } else {
+      this.selectedTimeRange = [minDate, maxDate];
+    }
+    if (this.graphElementSelector) {
+      this.clearGraph(this.graphElementSelector, this.brushSelector);
+      this.renderGraph(this.graphElementSelector);
+      this.renderBrush(this.brushSelector);
+    }
+  }
+
+  /**
+   * Clears the graph and brush SVGs, removes listeners, and handles missing event bus gracefully.
    */
   clearGraph(graphElementSelector, cfdBrushElementSelector) {
-    this.eventBus.removeAllListeners('change-time-range-scatterplot');
-    this.eventBus.removeAllListeners('scatterplot-mousemove');
-    this.eventBus.removeAllListeners('scatterplot-mouseleave');
-    this.eventBus.removeAllListeners('change-time-interval-scatterplot');
-    this.#drawBrushSvg(cfdBrushElementSelector);
-    this.#drawSvg(graphElementSelector);
+    if (this.eventBus && typeof this.eventBus.removeAllListeners === 'function') {
+      this.eventBus.removeAllListeners('change-time-range-scatterplot');
+      this.eventBus.removeAllListeners('scatterplot-mousemove');
+      this.eventBus.removeAllListeners('scatterplot-mouseleave');
+      this.eventBus.removeAllListeners('change-time-interval-scatterplot');
+    }
+    // Remove all children from the SVG elements
+    d3.select(graphElementSelector).selectAll('*').remove();
+    d3.select(cfdBrushElementSelector).selectAll('*').remove();
   }
 
   /**
@@ -372,7 +398,8 @@ export class CFDRenderer extends UIControlsRenderer {
       g.selectAll('text').attr('y', 30).style('fill', 'black');
       g.attr('clip-path', `url(#${clipId})`);
     } else {
-      axis = this.createXAxis(x, 'months');
+      const noOfDataDays = calculateDaysBetweenDates(this.x.domain()[0], this.x.domain()[1]).roundedDays;
+      axis = this.createXAxis(x, this.determineTheAppropriateAxisLabels(noOfDataDays));
       g.call(axis).attr('transform', `translate(0, ${height})`);
     }
   }
