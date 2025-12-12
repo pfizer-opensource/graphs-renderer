@@ -84,8 +84,8 @@ export class PBCRenderer extends UIControlsRenderer {
    */
   syncChartProperties() {
     if (!this.controlRenderer || !this.movingRangeRenderer) return;
-    this.movingRangeRenderer.reportingRangeDays = 30;
-    this.controlRenderer.reportingRangeDays = 30;
+    this.movingRangeRenderer.reportingRangeDays = 90;
+    this.controlRenderer.reportingRangeDays = 90;
     this.movingRangeRenderer.timeInterval = 'months';
     this.controlRenderer.timeInterval = 'months';
     this.movingRangeRenderer.timeScale = 'logarithmic';
@@ -132,6 +132,22 @@ export class PBCRenderer extends UIControlsRenderer {
         // No renderBrush() for moving range
       }
     });
+  }
+
+  /**
+   * Updates the renderer's data and re-renders the graph, preserving persistent props.
+   * @param {Array} newControlData - The new control chart data.
+   * @param {Array} newMovingRangeData - The new moving range chart data.
+   */
+  updateData(newControlData, newMovingRangeData) {
+    this.controlData = newControlData;
+    this.movingRangeData = newMovingRangeData;
+    if (this.controlRenderer && this.movingRangeRenderer) {
+      this.controlRenderer.updateData(newControlData);
+      this.movingRangeRenderer.updateData(newMovingRangeData);
+      this.syncChartProperties();
+      this.setupBrush(this.brushSelector);
+    }
   }
 
   /**

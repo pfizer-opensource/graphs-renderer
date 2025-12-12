@@ -115,15 +115,69 @@ export class ScatterplotRenderer extends UIControlsRenderer {
   }
 
   /**
+   * Updates the renderer's data and re-renders the graph, preserving persistent props.
+   * @param {Array} newData - The new data to render.
+   */
+  updateData(newData) {
+    this.data = newData;
+    this.computeXScale();
+    //Use the x scale domain (which includes buffer) for min/max dates
+    const [minDate, maxDate] = this.x.domain();
+    // SelectedTimeRange edge cases
+    let shouldResetRange = false;
+
+    if (!this.selectedTimeRange || this.selectedTimeRange[1] < minDate || this.selectedTimeRange[0] > maxDate) {
+      shouldResetRange = true;
+    }
+
+    if (shouldResetRange) {
+      // Reset to default time range (full data range with buffer)
+      this.selectedTimeRange = [minDate, maxDate];
+    } else {
+      // Adjust selectedTimeRange to fit within new data bounds
+      let [selectedStart, selectedEnd] = this.selectedTimeRange;
+      selectedStart = selectedStart < minDate ? minDate : selectedStart;
+      selectedEnd = selectedEnd > maxDate ? maxDate : selectedEnd;
+      this.selectedTimeRange = [selectedStart, selectedEnd];
+    }
+
+    if (this.graphElementSelector) {
+      this.clearGraph(this.graphElementSelector, this.brushSelector);
+      this.renderGraph(this.graphElementSelector);
+      const brushElement = document.querySelector(this.brushSelector);
+      if (brushElement) {
+        this.renderBrush(this.brushSelector);
+      }
+    }
+  }
+
+  /**
    * Clears the Scatterplot graph from specified DOM elements.
    * @param {string} graphElementSelector - The selector of the graph element to clear.
    * @param {string} brushElementSelector - The selector of the brush element to clear.
    */
   clearGraph(graphElementSelector, brushElementSelector) {
-    this.eventBus?.removeAllListeners('change-time-interval-cfd');
-    this.eventBus?.removeAllListeners('change-time-range-cfd');
-    this.drawBrushSvg(brushElementSelector);
-    this.drawSvg(graphElementSelector);
+    // Only remove listeners if eventBus exists and has removeAllListeners
+    if (this.eventBus && typeof this.eventBus.removeAllListeners === 'function') {
+      this.eventBus.removeAllListeners('change-time-interval-cfd');
+      this.eventBus.removeAllListeners('change-time-range-cfd');
+    }
+    // Only clear brush SVG if it exists
+    const brushElement = brushElementSelector ? document.querySelector(brushElementSelector) : null;
+    if (brushElement && brushElement.firstChild) {
+      while (brushElement.firstChild) {
+        brushElement.removeChild(brushElement.firstChild);
+      }
+      this.drawBrushSvg(brushElementSelector);
+    }
+    // Only clear main SVG if it exists
+    const graphElement = graphElementSelector ? document.querySelector(graphElementSelector) : null;
+    if (graphElement && graphElement.firstChild) {
+      while (graphElement.firstChild) {
+        graphElement.removeChild(graphElement.firstChild);
+      }
+      this.drawSvg(graphElementSelector);
+    }
   }
 
   /**
@@ -135,7 +189,12 @@ export class ScatterplotRenderer extends UIControlsRenderer {
   }
 
   updateChartArea(domain) {
-    const maxValue = d3.max(this.data, (d) => (d.deliveredDate <= domain[1] && d.deliveredDate >= domain[0] ? d.value : -1));
+    // Filter data within the domain first, ensuring deliveredDate is a Date object
+    const filteredData = this.data.filter((d) => {
+      const date = d.deliveredDate instanceof Date ? d.deliveredDate : new Date(d.deliveredDate);
+      return date <= domain[1] && date >= domain[0];
+    });
+    const maxValue = filteredData.length > 0 ? d3.max(filteredData, (d) => d.value) : 1;
     const minYValue = 128;
     const maxY = this.topLimit ? Math.max(maxValue, this.topLimit + 2, minYValue) : Math.max(maxValue + 2, minYValue);
     this.reportingRangeDays = calculateDaysBetweenDates(domain[0], domain[1]).roundedDays;
@@ -144,7 +203,10 @@ export class ScatterplotRenderer extends UIControlsRenderer {
     if (this.timeScale === 'logarithmic') {
       this.currentYScale = this.y.copy().domain([0.5, maxY]).nice();
     }
-    const focusData = this.data.filter((d) => d.deliveredDate <= domain[1] && d.deliveredDate >= domain[0]);
+    const focusData = this.data.filter((d) => {
+      const date = d.deliveredDate instanceof Date ? d.deliveredDate : new Date(d.deliveredDate);
+      return date <= domain[1] && date >= domain[0];
+    });
     this.changeTimeInterval(false);
     this.drawXAxis(this.gx, this.currentXScale, this.height, true);
     this.drawYAxis(this.gy, this.currentYScale);
@@ -200,9 +262,14 @@ export class ScatterplotRenderer extends UIControlsRenderer {
    * @param {d3.Scale} y - The Y-axis scale.
    */
   drawScatterplot(chartArea, data, x, y) {
+    // Ensure deliveredDate is a Date object
+    const safeData = data.map((d) => ({
+      ...d,
+      deliveredDate: d.deliveredDate instanceof Date ? d.deliveredDate : new Date(d.deliveredDate),
+    }));
     chartArea
       .selectAll(`.${this.dotClass}`)
-      .data(data)
+      .data(safeData)
       .enter()
       .append('circle')
       .attr('class', this.dotClass)
@@ -338,7 +405,7 @@ export class ScatterplotRenderer extends UIControlsRenderer {
   }
 
   computeXScale() {
-    const bufferDays = 5;
+    const bufferDays = 2;
     const xExtent = d3.extent(this.data, (d) => d.deliveredDate);
     const minDate = new Date(xExtent[0]);
     const maxDate = new Date(xExtent[1]);
@@ -405,7 +472,8 @@ export class ScatterplotRenderer extends UIControlsRenderer {
         d3.select(this).transition().duration(300).attr('height', axisHeight);
       });
     } else {
-      const axis = this.createXAxis(x, 'months');
+      const noOfDataDays = calculateDaysBetweenDates(this.x.domain()[0], this.x.domain()[1]).roundedDays;
+      const axis = this.createXAxis(x, this.determineTheAppropriateAxisLabels(noOfDataDays));
       g.call(axis).attr('transform', `translate(0, ${height})`);
       const outerXAxisTicks = g.append('g').attr('class', 'outer-ticks').call(axis?.tickSize(-height).tickFormat(''));
       outerXAxisTicks.selectAll('.tick line').attr('opacity', 0.1);
@@ -558,13 +626,22 @@ export class ScatterplotRenderer extends UIControlsRenderer {
    * @private
    */
   handleMouseClickEvent(event, d) {
+    // Ensure deliveredDate is a Date object for d and for all tickets
+    const safeD = {
+      ...d,
+      deliveredDate: d.deliveredDate instanceof Date ? d.deliveredDate : new Date(d.deliveredDate),
+    };
+    const safeData = this.data.map((ticket) => ({
+      ...ticket,
+      deliveredDate: ticket.deliveredDate instanceof Date ? ticket.deliveredDate : new Date(ticket.deliveredDate),
+    }));
     // Find all tickets with the same values
-    const overlappingTickets = this.data.filter(
-      (ticket) => ticket.deliveredDate.getTime() === d.deliveredDate.getTime() && ticket.value === d.value
+    const overlappingTickets = safeData.filter(
+      (ticket) => ticket.deliveredDate.getTime() === safeD.deliveredDate.getTime() && ticket.value === safeD.value
     );
 
     let data = {
-      ...d,
+      ...safeD,
       tooltipLeft: event.pageX,
       tooltipTop: event.pageY,
       overlappingTickets: overlappingTickets,
